@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Statistik — Tierkalb PRO{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>📊 Statistik & Reports (PRO)</h2>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>💰 Kosten pro Tier</h3>
+        {% if kosten %}
+        <table style="font-size: 0.9rem;">
+            <thead>
+                <tr><th>Tier</th><th>Gesamt</th></tr>
+            </thead>
+            <tbody>
+                {% for item in kosten %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>€ {{ "%.2f" | format(item.gesamt or 0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #999;">Noch keine Kosten erfasst</p>
+        {% endif %}
+    </div>
+    
+    <div class="card">
+        <h3>📈 Besamungen & Kalbungen</h3>
+        <p><strong>Besamungen:</strong> {{ besamungen.besamungen | length }}</p>
+        <p><strong>Kalbungen:</strong> {{ besamungen.geburten | length }}</p>
+        {% if besamungen.geburten and besamungen.besamungen %}
+            <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                <strong>Erfolgsrate:</strong> 
+                {{ "%.1f" | format((besamungen.geburten | length) / (besamungen.besamungen | length) * 100) }}%
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>📥 Exportieren</h3>
+    <a href="{{ url_for('export_csv', farm_id=farm.id) }}" class="btn">
+        Tiere als CSV exportieren
+    </a>
+</div>
+{% endblock %}

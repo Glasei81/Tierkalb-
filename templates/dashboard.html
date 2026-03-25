@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Tierkalb{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>📊 Dashboard</h2>
+    <p>Farm: <strong>{{ farm.name }}</strong></p>
+    
+    <div style="margin-top: 1rem;">
+        {% if is_pro %}
+            <span class="badge badge-pro">Pro</span>
+        {% else %}
+            <span class="badge badge-free">Free ({{ tier_count }}/{{ max_tiere }})</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>🐮 Tiere</h3>
+        <p style="font-size: 2rem; font-weight: bold;">{{ tier_count }}</p>
+        {% if not is_pro and tier_count >= max_tiere %}
+            <p style="color: #e74c3c; font-size: 0.9rem;">⚠️ Limit erreicht</p>
+            <a href="{{ url_for('pro', farm_id=farm.id) }}" class="btn btn-pro">Upgrade zu Pro</a>
+        {% else %}
+            <a href="{{ url_for('tier_neu', farm_id=farm.id) }}" class="btn">➕ Tier hinzufügen</a>
+        {% endif %}
+    </div>
+    
+    {% if is_pro %}
+    <div class="card">
+        <h3>📊 Statistik</h3>
+        <p>Kosten, Besamungen, Erfolgsrate</p>
+        <a href="{{ url_for('statistik', farm_id=farm.id) }}" class="btn">Zu den Reports</a>
+    </div>
+    {% endif %}
+</div>
+
+{% if tiere %}
+<div class="card">
+    <h3>Alle Tiere</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Tierart</th>
+                <th>Status</th>
+                <th>Letztes Ereignis</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tier in tiere %}
+            <tr>
+                <td><strong>{{ tier.name }}</strong></td>
+                <td>{{ tier.emoji }} {{ tier.tierart_name or '—' }}</td>
+                <td>{{ tier.status }}</td>
+                <td>
+                    {% if tier.letztes_ereignis %}
+                        {{ tier.letztes_ereignis.typ }} am {{ tier.letztes_ereignis.datum }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 3rem;">
+    <p style="font-size: 1.2rem; color: #999;">Noch keine Tiere erfasst</p>
+    <a href="{{ url_for('tier_neu', farm_id=farm.id) }}" class="btn" style="margin-top: 1rem;">➕ Erstes Tier hinzufügen</a>
+</div>
+{% endif %}
+{% endblock %}

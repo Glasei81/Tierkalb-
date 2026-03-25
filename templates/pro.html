@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Pro-Version — Tierkalb{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 2rem auto;">
+    {% if is_pro %}
+    <div class="card" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white; text-align: center;">
+        <h2 style="color: white; margin-bottom: 1rem;">✅ Pro aktiviert!</h2>
+        <p style="color: rgba(255,255,255,0.9);">Du hast Zugriff auf alle Premium-Features.</p>
+        <a href="{{ url_for('statistik') }}" class="btn btn-secondary" style="margin-top: 1rem;">Zu den Reports</a>
+    </div>
+    
+    {% else %}
+    <div class="card">
+        <h2>🚀 Pro-Version</h2>
+        <p style="font-size: 1.2rem; color: #666; margin-bottom: 2rem;">Unbegrenzte Tiere + Statistik + Export</p>
+        
+        <div style="background: #f5f5f5; padding: 2rem; border-radius: 8px; margin-bottom: 2rem;">
+            <div style="font-size: 3rem; font-weight: bold; color: #f39c12;">€ {{ price }}</div>
+            <div style="color: #666; margin-top: 0.5rem;">einmalig • Lifetime</div>
+        </div>
+        
+        <h3>Was ist in Pro enthalten?</h3>
+        <ul style="list-style: none; margin: 1.5rem 0;">
+            <li style="padding: 0.75rem 0;">✅ <strong>Unbegrenzt Tiere</strong> statt 15</li>
+            <li style="padding: 0.75rem 0;">✅ <strong>Statistik & Reports</strong> (Besamungen, Kalbungen, Erfolgsrate)</li>
+            <li style="padding: 0.75rem 0;">✅ <strong>Kosten-Analyse</strong> pro Tier und Monat</li>
+            <li style="padding: 0.75rem 0;">✅ <strong>Excel/CSV-Export</strong> für Auswertungen</li>
+            <li style="padding: 0.75rem 0;">✅ <strong>Lifetime-Zugriff</strong> (einmalige Zahlung)</li>
+        </ul>
+        
+        <form method="POST" action="{{ url_for('pro_unlock', farm_id=farm_id) }}" style="background: #f9f9f9; padding: 1.5rem; border-radius: 8px;">
+            <div class="form-group">
+                <label for="license_key">Lizenz-Key</label>
+                <input type="text" id="license_key" name="license_key" 
+                       placeholder="Geben Sie Ihren Lizenz-Schlüssel ein" required>
+                <small style="color: #666; margin-top: 0.5rem; display: block;">
+                    Kaufen Sie Pro auf <strong>gumroad.com/tierkalb</strong>
+                </small>
+            </div>
+            
+            <button type="submit" class="btn btn-pro" style="width: 100%;">
+                Pro-Version freischalten
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
