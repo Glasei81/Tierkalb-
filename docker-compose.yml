@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  tierkalb:
+    build: .
+    container_name: tierkalb
+    ports:
+      - "5000:5000"
+    volumes:
+      - tierkalb_data:/app/data
+    environment:
+      - SECRET_KEY=bitte-hier-ein-langes-zufaelliges-passwort-eingeben
+      # Optional: Telegram-Bot (alternativ auch in der App einstellbar)
+      # - TELEGRAM_TOKEN=dein-bot-token
+      # - TELEGRAM_CHAT_ID=deine-chat-id
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  tierkalb_data:
+    driver: local
