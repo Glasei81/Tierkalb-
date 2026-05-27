@@ -325,9 +325,8 @@ def export_csv():
             gesamt += k["betrag"]
     w.writerow(["", "GESAMT", f"{gesamt:.2f}", "", ""])
 
-    # UTF-8 BOM damit Excel Umlaute korrekt anzeigt
     bio = BytesIO()
-    bio.write(b"\xef\xbb\xbf")
+    bio.write(b"\xef\xbb\xbf")  # UTF-8 BOM für Excel
     bio.write(out.getvalue().encode("utf-8"))
     bio.seek(0)
     filename = f"tierkalb_{farm['name']}_{date.today().isoformat()}.csv"
@@ -375,10 +374,10 @@ def export_pdf():
             ("FONTSIZE",   (0, 0), (-1, -1), 8),
             ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, LGREY]),
             ("GRID", (0, 0), (-1, -1), 0.4, colors.lightgrey),
-            ("LEFTPADDING",  (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ("TOPPADDING",   (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING",(0, 0), (-1, -1), 3),
+            ("LEFTPADDING",   (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING",  (0, 0), (-1, -1), 4),
+            ("TOPPADDING",    (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
         ]))
         return tbl
 
@@ -388,7 +387,6 @@ def export_pdf():
     story.append(HRFlowable(width="100%", thickness=1, color=colors.grey))
     story.append(Spacer(1, 0.4*cm))
 
-    # Tier-Übersicht
     story.append(Paragraph("Tiere", h2))
     data = [["Name", "Ohrmarke", "Tierart", "Geburtsdatum", "Status"]]
     for tier in tiere:
@@ -403,7 +401,6 @@ def export_pdf():
     story.append(make_table(data, [4*cm, 3*cm, 4*cm, 3*cm, 3*cm], GREEN))
     story.append(Spacer(1, 0.4*cm))
 
-    # Kosten-Übersicht
     story.append(Paragraph("Kosten-Übersicht", h2))
     kpt = db.get_kosten_pro_tier(fid)
     gesamt = db.get_gesamtkosten(fid)
@@ -422,7 +419,6 @@ def export_pdf():
         story.append(Paragraph("Noch keine Kosten eingetragen.", normal))
     story.append(Spacer(1, 0.4*cm))
 
-    # Ereignisse je Tier
     story.append(Paragraph("Ereignisse", h2))
     for tier in tiere:
         ereignisse = db.get_ereignisse_fuer_tier(tier["id"], fid)
@@ -482,4 +478,6 @@ if __name__ == "__main__":
     db.init_db()
     from telegram_bot import start_scheduler
     start_scheduler(app)
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    # PORT-Umgebungsvariable für Railway/Cloud (Standard: 5000 lokal)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
