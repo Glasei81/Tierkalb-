@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}{{ tier.name }} — Tierkalb{% endblock %}
+{% block content %}
+
+{# Header #}
+<div class="d-flex align-items-center gap-2 mb-3">
+  <a href="/dashboard" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h4 class="mb-0 fw-bold">
+    {{ tier.emoji or '🐄' }} {{ tier.name }}
+  </h4>
+  <span class="badge {{ 'bg-success' if tier.status == 'Aktiv' else 'bg-secondary' }}">
+    {{ tier.status }}
+  </span>
+</div>
+
+{# Info-Kacheln #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card p-3">
+      <div class="text-muted small">Tierart</div>
+      <div class="fw-semibold">{{ tier.emoji or '' }} {{ tier.tierart_name or '—' }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3">
+      <div class="text-muted small">Ohrmarke</div>
+      <div class="fw-semibold">{{ tier.ohrmarke or '—' }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3">
+      <div class="text-muted small">Geburtsdatum</div>
+      <div class="fw-semibold">{{ tier.geburtsdatum or '—' }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3">
+      <div class="text-muted small">Gesamtkosten</div>
+      <div class="fw-semibold text-danger">{{ "%.2f" | format(kosten_gesamt) }} €</div>
+    </div>
+  </div>
+</div>
+
+{# Trächtigkeits-Info #}
+{% if erwartete_geburt or naechste_brunft %}
+<div class="alert alert-success border-0 mb-4">
+  {% if erwartete_geburt %}
+    <i class="bi bi-calendar-heart"></i>
+    <strong>Erwartete Geburt:</strong> {{ erwartete_geburt }}
+  {% endif %}
+  {% if naechste_brunft %}
+    &nbsp; | &nbsp;
+    <i class="bi bi-calendar"></i>
+    <strong>Nächste Brunft ca.:</strong> {{ naechste_brunft }}
+  {% endif %}
+</div>
+{% endif %}
+
+{% if tier.notiz %}
+<div class="alert alert-light border mb-4">
+  <i class="bi bi-sticky"></i> {{ tier.notiz }}
+</div>
+{% endif %}
+
+<div class="row g-4">
+
+{# Ereignisse #}
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center green">
+        <strong><i class="bi bi-calendar2-check"></i> Ereignisse</strong>
+        <a href="/tier/{{ tier.id }}/ereignis/neu" class="btn btn-sm btn-light">
+          <i class="bi bi-plus"></i> Eintragen
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if ereignisse %}
+        <table class="table table-sm table-hover mb-0">
+          <thead><tr><th>Typ</th><th>Datum</th><th>Notiz</th><th></th></tr></thead>
+          <tbody>
+          {% for e in ereignisse %}
+          <tr>
+            <td>
+              {% set icons = {'brunft':'🌸','besamung':'💉','geburt':'🐣','impfung':'💊','tierarzt':'🩺'} %}
+              {{ icons.get(e.typ, '📝') }} {{ e.typ | capitalize }}
+            </td>
+            <td>{{ e.datum }}</td>
+            <td class="text-muted small">{{ e.notiz or '' }}</td>
+            <td class="text-end">
+              <form method="POST"
+                    action="/tier/{{ tier.id }}/ereignis/{{ e.id }}/loeschen"
+                    onsubmit="return confirm('Ereignis löschen?')">
+                <button class="btn btn-sm btn-link text-danger p-0">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted p-3 mb-0">Noch keine Ereignisse.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+{# Kosten #}
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center"
+           style="background:#1565c0;color:white">
+        <strong><i class="bi bi-currency-euro"></i> Kosten</strong>
+        <a href="/tier/{{ tier.id }}/kosten/neu" class="btn btn-sm btn-light">
+          <i class="bi bi-plus"></i> Eintragen
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if kosten %}
+        <table class="table table-sm table-hover mb-0">
+          <thead><tr><th>Typ</th><th>Betrag</th><th>Datum</th><th></th></tr></thead>
+          <tbody>
+          {% for k in kosten %}
+          <tr>
+            <td>{{ k.typ }}</td>
+            <td class="fw-semibold text-danger">{{ "%.2f" | format(k.betrag) }} €</td>
+            <td>{{ k.datum }}</td>
+            <td class="text-end">
+              <form method="POST"
+                    action="/tier/{{ tier.id }}/kosten/{{ k.id }}/loeschen"
+                    onsubmit="return confirm('Kosteneintrag löschen?')">
+                <button class="btn btn-sm btn-link text-danger p-0">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="table-light">
+              <td><strong>Gesamt</strong></td>
+              <td colspan="3" class="fw-bold text-danger">
+                {{ "%.2f" | format(kosten_gesamt) }} €
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+        {% else %}
+        <p class="text-muted p-3 mb-0">Noch keine Kosten.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# Aktionen #}
+<div class="d-flex gap-2 mt-4">
+  <a href="/tier/{{ tier.id }}/bearbeiten" class="btn btn-outline-primary">
+    <i class="bi bi-pencil"></i> Bearbeiten
+  </a>
+  <form method="POST" action="/tier/{{ tier.id }}/archivieren"
+        onsubmit="return confirm('{{ tier.name }} archivieren?')">
+    <button class="btn btn-outline-secondary">
+      <i class="bi bi-archive"></i> Archivieren
+    </button>
+  </form>
+  <a href="/dashboard" class="btn btn-outline-secondary ms-auto">
+    <i class="bi bi-arrow-left"></i> Zurück
+  </a>
+</div>
+{% endblock %}

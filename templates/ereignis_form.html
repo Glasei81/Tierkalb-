@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Ereignis eintragen — Tierkalb{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <a href="/tier/{{ tier.id }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h4 class="mb-0 fw-bold">
+        {{ tier.emoji or '🐄' }} {{ tier.name }} — Ereignis eintragen
+      </h4>
+    </div>
+    <div class="card">
+      <div class="card-body p-4">
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Ereignis-Typ *</label>
+            <div class="row g-2">
+              {% for val, label in EREIGNIS_TYPEN %}
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="typ"
+                       id="typ_{{ val }}" value="{{ val }}"
+                       {{ 'checked' if loop.first }}>
+                <label class="btn btn-outline-success w-100" for="typ_{{ val }}">
+                  {{ label }}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Datum *</label>
+            <input type="date" name="datum" class="form-control"
+                   value="{{ heute }}" required>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Notiz (optional)</label>
+            <textarea name="notiz" class="form-control" rows="2"
+                      placeholder="z.B. Tierarzt Dr. Huber, KB-Stier Nr. ..."></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg"></i> Speichern
+            </button>
+            <a href="/tier/{{ tier.id }}" class="btn btn-outline-secondary">Abbrechen</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
