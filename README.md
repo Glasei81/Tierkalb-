@@ -1,149 +1,165 @@
-# 🐄 Tierkalb v2.0 — Farm-Management leicht gemacht
+# 🐄 Tierkalb v3.0 — Farm-Management leicht gemacht
 
-**Tierkalb** ist eine Web-App zum Verwalten deiner Nutztiere (Kühe, Schafe, Schweine, Hühner, etc.). Egal ob Hobby-Landwirt oder Kleinbauer — mit Tierkalb behältst du den Überblick über Trächtigkeit, Kosten und wichtige Termine.
-
----
-
-## 🚀 Was kann Tierkalb?
-
-✅ **Tiere verwalten** — Namen, Ohrmarken, Geburtsdatum, Rasse eintragen
-✅ **Trächtigkeit tracken** — Automatische Berechnung der Geburtstermine
-✅ **Kosten dokumentieren** — Tierarzt, Futter, Besamer, etc.
-✅ **Telegram-Benachrichtigungen** — Tägliche Updates zu anstehenden Geburten
-✅ **Mehrsprachig** — Deutsch & Englisch
-✅ **Datensicherheit** — Alles läuft lokal (keine Cloud nötig)
+**Tierkalb** ist eine Web-App zum Verwalten deiner Nutztiere (Kühe, Schafe, Schweine, Ziegen, Hühner). Egal ob Hobby-Landwirt oder Kleinbauer — mit Tierkalb behältst du den Überblick über Trächtigkeit, Kosten und wichtige Termine.
 
 ---
 
-## 📋 Installation für Anfänger
+## 🚀 Was kann Tierkalb v3.0?
 
-### Schritt 1: Vorbereitung (einmalig)
+✅ **Tiere verwalten** — Name, Ohrmarke, Geburtsdatum, Geschlecht, Notizen  
+✅ **Ereignisse eintragen** — Brunft, Besamung, Geburt, Impfung, Tierarzt, Sonstiges  
+✅ **Trächtigkeit tracken** — Automatische Berechnung der Geburtstermine  
+✅ **Kosten dokumentieren** — Tierarzt, Futter, Besamung, Medikamente, Impfung  
+✅ **Statistik & Auswertung** — Charts (Kosten/Tier, Kosten/Typ, Monatsverlauf, Besamungsrate)  
+✅ **Export** — CSV (Excel-kompatibel) + PDF-Bericht  
+✅ **Telegram-Bot** — Status abfragen UND Ereignisse direkt aus dem Stall eintragen  
+✅ **Mehrsprachig** — Deutsch & Englisch  
+✅ **Docker-ready** — Einfachstes Deployment, läuft auf jedem Rechner/Raspberry Pi  
 
-Du brauchst:
-- **Computer** mit macOS, Linux oder Windows
-- **Python 3.8+** (kostenlos von python.org)
-- **GitHub Desktop** oder Git-Kommandozeile (optional, aber empfohlen)
+---
 
-### Schritt 2: Code runterladen
+## 🐳 Schnellstart mit Docker (empfohlen)
 
-**Option A: Mit GitHub Desktop (einfach)**
-1. Lade [GitHub Desktop](https://desktop.github.com) herunter & installiere es
-2. Geh auf https://github.com/Glasei81/Tierkalb-
-3. Klick **Code** → **Open with GitHub Desktop**
-4. Speicher den Ordner auf deinem Computer
+### Voraussetzungen
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installiert
 
-**Option B: Mit Terminal/Kommandozeile**
+### Starten
+
 ```bash
-git clone git@github.com:Glasei81/Tierkalb-.git
+git clone https://github.com/Glasei81/Tierkalb-.git
 cd Tierkalb-
+docker-compose up -d
 ```
 
-### Schritt 3: Abhängigkeiten installieren
+Browser öffnen: **http://localhost:5000** → Fertig! 🎉
 
-Öffne Terminal/Kommandozeile im Tierkalb-Ordner und tippe:
+### Stoppen / Neustarten
 
 ```bash
+docker-compose down      # Stoppen (Daten bleiben erhalten)
+docker-compose up -d     # Wieder starten
+```
+
+### Update auf neue Version
+
+**Windows:** `update.bat` doppelklicken  
+**Mac/Linux:** `./update.sh` im Terminal
+
+---
+
+## 🐍 Alternative: Python direkt (ohne Docker)
+
+```bash
+git clone https://github.com/Glasei81/Tierkalb-.git
+cd Tierkalb-
 pip install -r requirements.txt
-```
-
-Das installiert automatisch alle nötigen Programme (Flask, SQLite, etc.).
-
-### Schritt 4: App starten
-
-```bash
 python app.py
 ```
 
-Dann öffne deinen Browser und geh zu: **http://localhost:5000**
-
-Fertig! 🎉
+Browser: **http://localhost:5000**
 
 ---
 
 ## 📱 Erste Schritte (in der App)
 
-1. **Setup-Wizard ausführen**
-   - Tierart auswählen (Kuh, Schaf, Schwein, Huhn, etc.)
-   - Anzahl deiner Tiere eingeben
-   - Namen & Ohrmarken speichern
+1. **Einrichtungs-Assistent** — Betriebsname eingeben, Sprache wählen → Fertig
+2. **Tier anlegen** — „+ Neues Tier" → Name, Tierart, Ohrmarke, Geburtsdatum
+3. **Ereignis eintragen** — Tier anklicken → „Ereignis eintragen" → Brunft / Besamung / Geburt ...
+4. **Kosten eintragen** — Tier anklicken → „Kosten eintragen" → Betrag, Art, Datum
+5. **Statistik ansehen** — Menü → Statistik
+6. **Telegram einrichten** — Menü → Einstellungen → Token + Chat-ID eintragen
 
-2. **Tier hinzufügen**
-   - Klick auf **+ Neues Tier**
-   - Gib Namen, Geburtsdatum, Rasse ein
-   - Speichern
-
-3. **Trächtigkeit eintragen**
-   - Wähle ein Tier aus
-   - Klick **Trächtigkeit starten** mit dem Besamerungsdatum
-   - Die App berechnet automatisch das Geburtsdatum
-
-4. **Kosten protokollieren**
-   - Geh zu **Kosten** → **+ Neue Ausgabe**
-   - Wähle Tier & Art (Tierarzt, Futter, etc.)
-   - Summe eingeben
-
-5. **Telegram-Bot verbinden** (optional)
-   - Gib deinen Bot-Token in der App ein
-   - Erhalte täglich Benachrichtigungen
+📖 Ausführliche Bedienungsanleitung: **[ANLEITUNG.md](ANLEITUNG.md)**  
+🚢 Deployment auf Server/Raspberry Pi: **[DEPLOYMENT.md](DEPLOYMENT.md)**
 
 ---
 
-## 🔧 Technische Details (für IT-Profis)
+## 📲 Telegram-Befehle
+
+Mit dem Telegram-Bot kannst du **direkt aus dem Stall** eintragen — kein Browser nötig.
+
+### Abfragen
+| Befehl | Erklärung |
+|--------|-----------|
+| `/status` | Vollständiger Überblick: Brunft, Trächtigkeit, bevorstehende Geburten |
+| `/tiere` | Liste aller aktiven Tiere |
+| `/hilfe` | Befehlsliste |
+
+### Eintragen
+| Befehl | Beispiel | Erklärung |
+|--------|----------|-----------|
+| `/besamung` | `/besamung Emma` | Besamung heute |
+| `/besamung` | `/besamung Emma 24.05.` | Besamung mit Datum |
+| `/brunft` | `/brunft Bella` | Brunft heute |
+| `/geburt` | `/geburt Lisa 20.05.` | Geburt mit Datum |
+| `/impfung` | `/impfung Anna` | Impfung heute |
+| `/tierarzt` | `/tierarzt Emma 150` | Tierarzt 150 € |
+| `/kosten` | `/kosten Emma 80` | Sonstige Kosten 80 € |
+
+Täglich um **6:00 Uhr** kommt automatisch eine Meldung, wenn Geburten bevorstehen.
+
+---
+
+## 🔧 Technische Details
 
 ### Stack
-- **Frontend:** HTML, CSS, JavaScript (mobile-friendly)
-- **Backend:** Python + Flask
-- **Datenbank:** SQLite (Datei-basiert, keine Server nötig)
-- **Integration:** Telegram Bot API
+- **Backend:** Python 3.11 + Flask
+- **Datenbank:** SQLite (dateibasiert, kein Datenbankserver nötig)
+- **Frontend:** Bootstrap 5.3, Chart.js
+- **Export:** ReportLab (PDF), csv (Excel)
+- **Telegram:** APScheduler + Polling-Thread
+- **Deployment:** Docker / docker-compose
 
 ### Dateistruktur
 ```
 Tierkalb-/
-├── app.py              # Haupt-App (Flask)
-├── database.py         # Datenbank-Logik
-├── tierarten.py        # Tierart-Spezifikationen
+├── app.py              # Flask-Routen
+├── database.py         # Datenbank-Logik (SQLite)
+├── tierarten.py        # Tierart-Konfigurationen & Übersetzungen
+├── telegram_bot.py     # Telegram-Bot (Polling + Scheduler)
 ├── requirements.txt    # Python-Abhängigkeiten
-├── templates/          # HTML-Templates
-├── static/             # CSS, JavaScript, Bilder
-└── data/               # SQLite-Datenbank (lokal)
+├── Dockerfile          # Docker-Image
+├── docker-compose.yml  # Docker-Compose mit Volume
+├── update.bat          # Windows Update-Skript
+├── update.sh           # Linux/Mac Update-Skript
+├── ANLEITUNG.md        # Bedienungsanleitung (für Landwirte)
+├── DEPLOYMENT.md       # Deployment-Anleitung (für Techniker)
+├── templates/          # HTML-Templates (Jinja2)
+└── data/               # SQLite-Datenbank (wird automatisch erstellt)
 ```
 
-### Datenbank
-Die SQLite-Datenbank wird automatisch beim ersten Start erstellt (`data/tierkalb.db`).
-
-### Telegram-Integration
-- Erstelle einen Bot via [BotFather](https://t.me/botfather) auf Telegram
-- Token in der App eintragen
-- Bot sendet täglich um 6:00 Uhr morgens Updates
+### Tragzeiten (voreingestellt)
+| Tierart | Tragzeit | Brunft-Zyklus |
+|---------|----------|---------------|
+| 🐄 Rinder | 280 Tage | 21 Tage |
+| 🐑 Schafe | 150 Tage | 17 Tage |
+| 🐷 Schweine | 114 Tage | 21 Tage |
+| 🐐 Ziegen | 150 Tage | 21 Tage |
+| 🐔 Hühner | 21 Tage (Brutzeit) | — |
 
 ---
 
 ## 🐛 Häufige Probleme
 
-**"Python nicht gefunden"**
-→ Python noch nicht installiert? Download: https://python.org
+**Port 5000 schon belegt**  
+→ In `docker-compose.yml` den Port ändern: `"5001:5000"`
 
-**"Port 5000 schon in Benutzung"**
-→ Andere App blockiert Port. Änder in `app.py` Zeile `app.run(port=5000)` zu `app.run(port=5001)`
+**Datenbank-Fehler nach Update**  
+→ `docker-compose down && docker-compose up -d` — Migration läuft automatisch
 
-**"Datenbank-Fehler"**
-→ Lösch `data/tierkalb.db` und starte neu. Setup-Wizard wird wieder angezeigt.
+**Telegram antwortet nicht**  
+→ Token und Chat-ID unter Menü → Einstellungen prüfen. Einmal `/start` an den Bot schicken.
 
-**"Telegram funktioniert nicht"**
-→ Überprüfe den Bot-Token. Sicherstellen, dass der Bot läuft (`python app.py` muss aktiv sein).
-
----
-
-## 📧 Support & Entwicklung
-
-Fragen oder Bugs? Erstelle ein Issue auf GitHub oder kontaktier den Entwickler.
+**App fragt nach Einrichtung (neues Gerät/Browser)**  
+→ Den Link mit `?farm_id=DEINE_ID` verwenden. Farm-ID steht in der URL nach dem ersten Setup.
 
 ---
 
-## 📄 Lizenz
+## 📧 Support
 
-MIT License — siehe LICENSE-Datei für Details.
+Fragen oder Bugs → [GitHub Issues](https://github.com/Glasei81/Tierkalb-/issues)  
+Entwickler unterstützen → Menü → ❤️
 
 ---
 
-**Viel Spaß mit Tierkalb!** 🚜🐑
+**Viel Erfolg am Betrieb!** 🚜🐄🐑
