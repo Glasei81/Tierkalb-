@@ -1,4 +1,4 @@
-# Tierart-Konfigurationen für Tierkalb v2.0
+# Tierart-Konfigurationen für Tierkalb v3.0
 
 TIERARTEN = {
     "Rinder":   {"brunft": 21,   "tragzeit": 280, "label": "Kalben",      "emoji": "🐄"},
@@ -8,43 +8,71 @@ TIERARTEN = {
     "Hühner":   {"brunft": None, "tragzeit": 21,  "label": "Schlupf",     "emoji": "🐔"},
 }
 
-# Mehrsprachigkeit
+KOSTEN_TYPEN = [
+    "Tierarzt",
+    "Besamung",
+    "Futter",
+    "Medikamente",
+    "Impfung",
+    "Sonstiges",
+]
+
+EREIGNIS_TYPEN = [
+    ("brunft",    "🌸 Brunft"),
+    ("besamung",  "💉 Besamung"),
+    ("geburt",    "🐣 Geburt"),
+    ("impfung",   "💊 Impfung"),
+    ("tierarzt",  "🩺 Tierarzt"),
+    ("sonstiges", "📝 Sonstiges"),
+]
+
 I18N = {
     "de": {
         "willkommen":      "Willkommen zu Tierkalb",
         "dashboard":       "Dashboard",
         "statistik":       "Statistik",
-        "berichte":        "Berichte",
         "einstellungen":   "Einstellungen",
-        "pro_version":     "Pro-Version",
+        "tiere":           "Tiere",
+        "neues_tier":      "Neues Tier",
+        "bearbeiten":      "Bearbeiten",
+        "loeschen":        "Löschen",
+        "archivieren":     "Archivieren",
+        "speichern":       "Speichern",
+        "abbrechen":       "Abbrechen",
+        "ereignisse":      "Ereignisse",
+        "kosten":          "Kosten",
+        "neues_ereignis":  "Ereignis eintragen",
+        "neue_kosten":     "Kosten eintragen",
+        "export":          "Exportieren",
         "kosten_analyse":  "Kosten-Analyse",
         "besamungen":      "Besamungen",
-        "kalbungen":       "Kalbungen",
+        "geburten":        "Geburten",
         "erfolgsrate":     "Erfolgsrate",
-        "export":          "Exportieren",
-        "pro_required":    "Pro-Version erforderlich",
-        "limit_free":      "15 Tiere kostenlos",
-        "unlimited_pro":   "Unbegrenzt mit Pro",
-        "buy_now":         "Jetzt upgraden",
+        "gesamt":          "Gesamt",
+        "keine_daten":     "Noch keine Daten vorhanden",
     },
     "en": {
-        "willkommen":      "Welcome to Animalcal",
+        "willkommen":      "Welcome to Tierkalb",
         "dashboard":       "Dashboard",
         "statistik":       "Statistics",
-        "berichte":        "Reports",
         "einstellungen":   "Settings",
-        "pro_version":     "Pro Version",
+        "tiere":           "Animals",
+        "neues_tier":      "New Animal",
+        "bearbeiten":      "Edit",
+        "loeschen":        "Delete",
+        "archivieren":     "Archive",
+        "speichern":       "Save",
+        "abbrechen":       "Cancel",
+        "ereignisse":      "Events",
+        "kosten":          "Costs",
+        "neues_ereignis":  "Add Event",
+        "neue_kosten":     "Add Cost",
+        "export":          "Export",
         "kosten_analyse":  "Cost Analysis",
         "besamungen":      "Inseminations",
-        "kalbungen":       "Births",
+        "geburten":        "Births",
         "erfolgsrate":     "Success Rate",
-        "export":          "Export",
-        "pro_required":    "Pro version required",
-        "limit_free":      "15 animals free",
-        "unlimited_pro":   "Unlimited with Pro",
-        "buy_now":         "Upgrade now",
+        "gesamt":          "Total",
+        "keine_daten":     "No data available yet",
     },
 }
-
-MAX_TIERE_FREE = 15
-PRO_PRICE = 19.99

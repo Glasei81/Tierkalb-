@@ -1,75 +1,131 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block title %}Dashboard — Tierkalb{% endblock %}
-
 {% block content %}
-<div class="card">
-    <h2>📊 Dashboard</h2>
-    <p>Farm: <strong>{{ farm.name }}</strong></p>
-    
-    <div style="margin-top: 1rem;">
-        {% if is_pro %}
-            <span class="badge badge-pro">Pro</span>
-        {% else %}
-            <span class="badge badge-free">Free ({{ tier_count }}/{{ max_tiere }})</span>
-        {% endif %}
-    </div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">🌱 {{ farm.name }}</h4>
+    {% if farm.owner_name %}<small class="text-muted">{{ farm.owner_name }}</small>{% endif %}
+  </div>
+  <a href="/tier/neu" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Neues Tier
+  </a>
 </div>
 
-<div class="grid">
-    <div class="card">
-        <h3>🐮 Tiere</h3>
-        <p style="font-size: 2rem; font-weight: bold;">{{ tier_count }}</p>
-        {% if not is_pro and tier_count >= max_tiere %}
-            <p style="color: #e74c3c; font-size: 0.9rem;">⚠️ Limit erreicht</p>
-            <a href="{{ url_for('pro', farm_id=farm.id) }}" class="btn btn-pro">Upgrade zu Pro</a>
-        {% else %}
-            <a href="{{ url_for('tier_neu', farm_id=farm.id) }}" class="btn">➕ Tier hinzufügen</a>
-        {% endif %}
+{# Quick-Stats #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3">
+      <div class="text-muted small">Tiere (aktiv)</div>
+      <div class="fs-3 fw-bold">{{ tier_count }}</div>
     </div>
-    
-    {% if is_pro %}
-    <div class="card">
-        <h3>📊 Statistik</h3>
-        <p>Kosten, Besamungen, Erfolgsrate</p>
-        <a href="{{ url_for('statistik', farm_id=farm.id) }}" class="btn">Zu den Reports</a>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3">
+      <div class="text-muted small">Gesamtkosten</div>
+      <div class="fs-3 fw-bold">{{ "%.0f" | format(gesamtkosten) }} €</div>
     </div>
-    {% endif %}
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3">
+      <div class="text-muted small">Geburten bald</div>
+      <div class="fs-3 fw-bold">{{ upcoming | length }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3">
+      <div class="text-muted small">
+        <a href="/statistik" class="text-decoration-none text-muted">→ Statistik</a>
+      </div>
+      <div class="fs-5 fw-bold text-success">
+        <a href="/export/pdf" class="text-decoration-none text-success">
+          <i class="bi bi-file-pdf"></i> PDF
+        </a>
+        &nbsp;
+        <a href="/export/csv" class="text-decoration-none text-success">
+          <i class="bi bi-file-excel"></i> CSV
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
 
+{# Geburten-Widget #}
+{% if upcoming %}
+<div class="alert alert-warning border-0 mb-4">
+  <strong><i class="bi bi-calendar-heart"></i> Bald erwartet (nächste 30 Tage):</strong>
+  <div class="mt-2 d-flex flex-wrap gap-2">
+  {% for u in upcoming %}
+    <span class="badge fs-6 px-3 py-2
+      {{ 'bg-danger' if u.tage_bis_geburt <= 3 else
+         'bg-warning text-dark' if u.tage_bis_geburt <= 7 else
+         'bg-success' }}">
+      {{ u.emoji or '🐄' }} {{ u.name }}
+      &mdash;
+      {% if u.tage_bis_geburt == 0 %}heute!
+      {% elif u.tage_bis_geburt == 1 %}morgen
+      {% else %}in {{ u.tage_bis_geburt }} Tagen
+      {% endif %}
+      ({{ u.erwartete_geburt_fmt }})
+    </span>
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# Tierliste #}
 {% if tiere %}
 <div class="card">
-    <h3>Alle Tiere</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Tierart</th>
-                <th>Status</th>
-                <th>Letztes Ereignis</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for tier in tiere %}
-            <tr>
-                <td><strong>{{ tier.name }}</strong></td>
-                <td>{{ tier.emoji }} {{ tier.tierart_name or '—' }}</td>
-                <td>{{ tier.status }}</td>
-                <td>
-                    {% if tier.letztes_ereignis %}
-                        {{ tier.letztes_ereignis.typ }} am {{ tier.letztes_ereignis.datum }}
-                    {% else %}
-                        —
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+  <div class="card-header green">
+    <strong><i class="bi bi-list-ul"></i> Alle Tiere</strong>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Ohrmarke</th>
+          <th class="d-none d-md-table-cell">Tierart</th>
+          <th class="d-none d-md-table-cell">Nächste Geburt</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for tier in tiere %}
+        <tr class="{{ 'table-warning' if tier.get('geburt_bald') }}">
+          <td>
+            <span class="tier-emoji">{{ tier.emoji or '🐄' }}</span>
+            <strong>{{ tier.name }}</strong>
+          </td>
+          <td class="text-muted">{{ tier.ohrmarke or '—' }}</td>
+          <td class="d-none d-md-table-cell">{{ tier.tierart_name or '—' }}</td>
+          <td class="d-none d-md-table-cell">
+            {% if tier.erwartete_geburt %}
+              <span class="badge {{ 'bg-danger' if tier.geburt_bald else 'bg-success' }}">
+                {{ tier.erwartete_geburt }}
+              </span>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <a href="/tier/{{ tier.id }}" class="btn btn-sm btn-outline-success">
+              <i class="bi bi-eye"></i> Details
+            </a>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
     </table>
+  </div>
 </div>
 {% else %}
-<div class="card" style="text-align: center; padding: 3rem;">
-    <p style="font-size: 1.2rem; color: #999;">Noch keine Tiere erfasst</p>
-    <a href="{{ url_for('tier_neu', farm_id=farm.id) }}" class="btn" style="margin-top: 1rem;">➕ Erstes Tier hinzufügen</a>
+<div class="text-center py-5">
+  <div style="font-size:4rem">🐄</div>
+  <h5 class="text-muted">Noch keine Tiere eingetragen</h5>
+  <a href="/tier/neu" class="btn btn-primary mt-2">
+    <i class="bi bi-plus-lg"></i> Erstes Tier hinzufügen
+  </a>
 </div>
 {% endif %}
 {% endblock %}
