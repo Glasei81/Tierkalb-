@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Danke — Tierkalb{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 text-center">
+
+    <div style="font-size:4rem">🐄</div>
+    <h3 class="fw-bold mt-2">Danke für deine Unterstützung!</h3>
+    <p class="text-muted">
+      Tierkalb ist kostenlos und wird in der Freizeit weiterentwickelt.
+      Wenn es dir im Alltag etwas wert ist — freue ich mich sehr über eine kleine Spende.
+    </p>
+
+    <div class="card my-4">
+      <div class="card-body p-4">
+
+        <p class="text-muted mb-1">Dein Betrieb hat aktuell</p>
+        <div class="fs-2 fw-bold text-success">{{ tier_count }} aktive Tiere</div>
+
+        <hr class="my-4">
+
+        <p class="fw-semibold mb-3">Einmaliger Beitrag — kein Abo, kein Muss:</p>
+
+        <div class="d-flex flex-column gap-3">
+
+          {# Empfohlener Betrag je nach Herdengröße #}
+          {% if tier_count <= 20 %}
+            {% set empfohlen = 5 %}
+          {% elif tier_count <= 50 %}
+            {% set empfohlen = 10 %}
+          {% else %}
+            {% set empfohlen = 20 %}
+          {% endif %}
+
+          {% for betrag, label in [(5, 'bis 20 Tiere'), (10, 'bis 50 Tiere'), (20, 'ab 50 Tiere')] %}
+          <a href="https://www.paypal.me/StefanGlas231/{{ betrag }}"
+             target="_blank" rel="noopener"
+             class="btn btn-lg {{ 'btn-primary' if betrag == empfohlen else 'btn-outline-secondary' }}">
+            <strong>{{ betrag }} €</strong>
+            <span class="ms-2 fs-6 fw-normal opacity-75">— {{ label }}</span>
+            {% if betrag == empfohlen %}
+            <span class="badge bg-warning text-dark ms-2">Empfohlen</span>
+            {% endif %}
+          </a>
+          {% endfor %}
+        </div>
+
+        <p class="text-muted small mt-4 mb-0">
+          <i class="bi bi-shield-check"></i>
+          Sichere Zahlung via PayPal — du wirst auf paypal.me weitergeleitet.
+        </p>
+      </div>
+    </div>
+
+    <a href="/dashboard" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Zurück zum Dashboard
+    </a>
+
+  </div>
+</div>
+{% endblock %}

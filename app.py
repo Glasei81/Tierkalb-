@@ -298,7 +298,6 @@ def export_csv():
 
     out = StringIO()
     w = csv.writer(out, delimiter=";")
-
     w.writerow(["=== TIERE ==="])
     w.writerow(["Name", "Ohrmarke", "Tierart", "Geburtsdatum", "Geschlecht", "Status", "Notiz"])
     for tier in tiere:
@@ -306,14 +305,12 @@ def export_csv():
                     tier["tierart_name"] or "", tier["geburtsdatum"] or "",
                     tier.get("geschlecht") or "", tier["status"],
                     tier.get("notiz") or ""])
-
     w.writerow([])
     w.writerow(["=== EREIGNISSE ==="])
     w.writerow(["Tier", "Typ", "Datum", "Notiz"])
     for tier in tiere:
         for e in db.get_ereignisse_fuer_tier(tier["id"], fid):
             w.writerow([tier["name"], e["typ"], e["datum"], e["notiz"] or ""])
-
     w.writerow([])
     w.writerow(["=== KOSTEN ==="])
     w.writerow(["Tier", "Typ", "Betrag (EUR)", "Datum", "Notiz"])
@@ -326,7 +323,7 @@ def export_csv():
     w.writerow(["", "GESAMT", f"{gesamt:.2f}", "", ""])
 
     bio = BytesIO()
-    bio.write(b"\xef\xbb\xbf")  # UTF-8 BOM für Excel
+    bio.write(b"\xef\xbb\xbf")
     bio.write(out.getvalue().encode("utf-8"))
     bio.seek(0)
     filename = f"tierkalb_{farm['name']}_{date.today().isoformat()}.csv"
@@ -391,13 +388,9 @@ def export_pdf():
     data = [["Name", "Ohrmarke", "Tierart", "Geburtsdatum", "Status"]]
     for tier in tiere:
         emoji = tier.get("emoji") or ""
-        data.append([
-            tier["name"],
-            tier["ohrmarke"] or "–",
-            f"{emoji} {tier['tierart_name'] or '–'}",
-            tier["geburtsdatum"] or "–",
-            tier["status"],
-        ])
+        data.append([tier["name"], tier["ohrmarke"] or "–",
+                     f"{emoji} {tier['tierart_name'] or '–'}",
+                     tier["geburtsdatum"] or "–", tier["status"]])
     story.append(make_table(data, [4*cm, 3*cm, 4*cm, 3*cm, 3*cm], GREEN))
     story.append(Spacer(1, 0.4*cm))
 
@@ -423,8 +416,7 @@ def export_pdf():
     for tier in tiere:
         ereignisse = db.get_ereignisse_fuer_tier(tier["id"], fid)
         if ereignisse:
-            emoji = tier.get("emoji") or ""
-            story.append(Paragraph(f"{emoji} {tier['name']}", h3))
+            story.append(Paragraph(f"{tier.get('emoji','')}{tier['name']}", h3))
             edata = [["Typ", "Datum", "Notiz"]]
             for e in ereignisse:
                 edata.append([e["typ"].capitalize(), e["datum"], e["notiz"] or ""])
@@ -437,6 +429,16 @@ def export_pdf():
     filename = f"tierkalb_{farm['name']}_{date.today().isoformat()}.pdf"
     return send_file(bio, mimetype="application/pdf",
                      as_attachment=True, download_name=filename)
+
+
+# ─── Spenden ─────────────────────────────────────────────────────────────
+
+@app.route("/spenden")
+@require_farm
+def spenden():
+    fid = get_farm_id()
+    tier_count = db.get_tier_count(fid)
+    return render_template("spenden.html", tier_count=tier_count, t=t)
 
 
 # ─── Einstellungen ───────────────────────────────────────────────────────
@@ -478,6 +480,5 @@ if __name__ == "__main__":
     db.init_db()
     from telegram_bot import start_scheduler
     start_scheduler(app)
-    # PORT-Umgebungsvariable für Railway/Cloud (Standard: 5000 lokal)
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
