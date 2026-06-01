@@ -7,14 +7,14 @@ Ausgabe:
   - /tiere       — Alle Tiere auflisten
 
 Eingabe (direkt aus dem Stall):
-  - /neues_tier  <name> <tierart>      — Neues Tier anlegen
-  - /besamung    <tier>                — Besamung heute eintragen
-  - /brunft      <tier>                — Brunft heute eintragen
-  - /geburt      <tier>                — Geburt heute eintragen
-  - /impfung     <tier>                — Impfung heute eintragen
-  - /tierarzt    <tier> <betrag>       — Tierarzt-Kosten eintragen
-  - /kosten      <tier> <betrag>       — Sonstige Kosten eintragen
-  - /hilfe                             — Befehlsliste
+  - /neues_tier  <name> <tierart>           — Neues Tier anlegen
+  - /besamung    <tier> [datum] [betrag]    — Besamung + optional Kosten
+  - /brunft      <tier> [datum]             — Brunft eintragen
+  - /geburt      <tier> [datum]             — Geburt eintragen
+  - /impfung     <tier> [datum]             — Impfung eintragen
+  - /tierarzt    <tier> <betrag>            — Tierarzt-Kosten eintragen
+  - /kosten      <tier> <betrag>            — Sonstige Kosten eintragen
+  - /hilfe                                  — Befehlsliste
 
 Einrichtung: Token + Chat-ID in der App unter Einstellungen eintragen.
 """
@@ -25,7 +25,7 @@ import requests
 from datetime import date, timedelta
 
 
-# ─── Telegram API Basis ─────────────────────────────────────────────────────────────────────────────────────
+# ─── Telegram API Basis ───────────────────────────────────────────────────────────
 
 def send_message(token: str, chat_id: str, text: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -62,7 +62,7 @@ def set_bot_commands(token: str) -> bool:
         {"command": "status",     "description": "Brunft, Trächtigkeit, Geburten"},
         {"command": "tiere",      "description": "Alle Tiere auflisten"},
         {"command": "neues_tier", "description": "Neues Tier anlegen: /neues_tier Name Tierart"},
-        {"command": "besamung",   "description": "Besamung eintragen: /besamung Emma"},
+        {"command": "besamung",   "description": "Besamung: /besamung Emma [Datum] [Kosten €]"},
         {"command": "brunft",     "description": "Brunft eintragen: /brunft Emma"},
         {"command": "geburt",     "description": "Geburt eintragen: /geburt Emma"},
         {"command": "impfung",    "description": "Impfung eintragen: /impfung Emma"},
@@ -78,7 +78,7 @@ def set_bot_commands(token: str) -> bool:
         return False
 
 
-# ─── Tier suchen (case-insensitiv, Teilstring) ───────────────────────────────────────────────────
+# ─── Tier suchen ──────────────────────────────────────────────────────────────────
 
 def find_tier(tiere: list, suchname: str):
     s = suchname.lower().strip()
@@ -117,7 +117,7 @@ def datum_parsen(datum_str: str):
     return None
 
 
-# ─── Befehle: Ausgabe ────────────────────────────────────────────────────────────────────────────────────────
+# ─── Ausgabe-Nachrichten ──────────────────────────────────────────────────────────
 
 def build_status_message(farm_id: str, farm_name: str) -> str:
     import database as db
@@ -263,19 +263,20 @@ def build_hilfe_message(farm_name: str) -> str:
         "/neues_tier Emma Rind     — Kuh namens Emma anlegen\n"
         "/neues_tier Wolke Schaf   — Schaf namens Wolke anlegen\n\n"
         "<b>Eingabe (aus dem Stall):</b>\n"
-        "/besamung Emma        — Besamung heute\n"
-        "/besamung Emma 24.05. — Besamung mit Datum\n"
-        "/brunft Emma          — Brunft heute\n"
-        "/geburt Emma          — Geburt heute\n"
-        "/impfung Emma         — Impfung heute\n"
-        "/tierarzt Emma 150    — Tierarzt 150 €\n"
-        "/kosten Emma 80       — Sonstige Kosten 80 €\n\n"
+        "/besamung Emma            — Besamung heute\n"
+        "/besamung Emma 85         — Besamung + 85 € Kosten\n"
+        "/besamung Emma 24.05. 85  — Besamung mit Datum + Kosten\n"
+        "/brunft Emma              — Brunft heute\n"
+        "/geburt Emma              — Geburt heute\n"
+        "/impfung Emma             — Impfung heute\n"
+        "/tierarzt Emma 150        — Tierarzt 150 €\n"
+        "/kosten Emma 80           — Sonstige Kosten 80 €\n\n"
         "<i>Namen können abgekürzt werden: /besamung em findet Emma</i>\n"
         "<i>Täglich 6:00 Uhr: automatische Geburts-Meldung</i>"
     )
 
 
-# ─── Befehle: Eingabe ────────────────────────────────────────────────────────────────────────────────────────
+# ─── Befehle: Eingabe ─────────────────────────────────────────────────────────────
 
 def cmd_neues_tier(args: list, farm_id: str) -> str:
     import database as db
@@ -311,6 +312,66 @@ def cmd_neues_tier(args: list, farm_id: str) -> str:
         f"Tierart: {tierart['name']}\n"
         f"📝 Ohrmarke und Geburtsdatum kannst du in der App ergänzen."
     )
+
+
+def cmd_besamung(args: list, farm_id: str) -> str:
+    """Besamung eintragen mit optionalem Datum und optionalen Kosten.
+
+    Syntax:
+      /besamung Emma
+      /besamung Emma 85
+      /besamung Emma 24.05.
+      /besamung Emma 24.05. 85
+    """
+    import database as db
+
+    if not args:
+        return "❌ Bitte Tiernamen angeben. Beispiel: /besamung Emma"
+
+    tiere = db.get_alle_tiere(farm_id)
+    heute = date.today()
+    ereignis_datum = heute
+    kosten = None
+    teile = list(args)
+
+    # Letztes Argument: Kosten (Zahl)?
+    if len(teile) >= 2:
+        try:
+            kosten = float(teile[-1].replace(",", "."))
+            teile = teile[:-1]
+        except ValueError:
+            pass
+
+    # Letztes verbleibendes Argument: Datum?
+    if len(teile) >= 2:
+        d = datum_parsen(teile[-1])
+        if d:
+            ereignis_datum = d
+            teile = teile[:-1]
+
+    suchname = " ".join(teile)
+    tier, mehrere = find_tier(tiere, suchname)
+
+    if mehrere:
+        namen = ", ".join(t["name"] for t in mehrere)
+        return f"❓ Mehrere Tiere gefunden: {namen}\nBitte genauer angeben."
+    if not tier:
+        return tier_nicht_gefunden(suchname, tiere)
+
+    db.add_ereignis(farm_id, tier["id"], "besamung", ereignis_datum.isoformat())
+
+    dat_fmt = ereignis_datum.strftime("%d.%m.%Y")
+    antwort = f"✅ 💉 Besamung für <b>{tier['name']}</b> eingetragen ({dat_fmt})."
+
+    if kosten is not None:
+        db.add_kosten(farm_id, tier["id"], "Besamung", kosten, ereignis_datum.isoformat())
+        antwort += f"\n💶 Kosten <b>{kosten:.2f} €</b> eingetragen."
+
+    if tier.get("tragzeit"):
+        erw = ereignis_datum + timedelta(days=tier["tragzeit"])
+        antwort += f"\n📅 Erwartete Geburt: <b>{erw.strftime('%d.%m.%Y')}</b>"
+
+    return antwort
 
 
 def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
@@ -352,10 +413,6 @@ def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
     label = labels.get(typ, typ.capitalize())
     antwort = f"✅ {label} für <b>{tier['name']}</b> eingetragen ({dat_fmt})."
 
-    if typ == "besamung" and tier.get("tragzeit"):
-        erw = ereignis_datum + timedelta(days=tier["tragzeit"])
-        antwort += f"\n📅 Erwartete Geburt: <b>{erw.strftime('%d.%m.%Y')}</b>"
-
     if typ == "brunft" and tier.get("brunft_zyklus"):
         naechste = ereignis_datum + timedelta(days=tier["brunft_zyklus"])
         antwort += f"\n📅 Nächste Brunft ca.: {naechste.strftime('%d.%m.%Y')}"
@@ -396,7 +453,7 @@ def cmd_kosten(args: list, typ: str, farm_id: str) -> str:
     )
 
 
-# ─── Befehl-Router ─────────────────────────────────────────────────────────────────────────────────
+# ─── Befehl-Router ────────────────────────────────────────────────────────────────
 
 def handle_command(text: str, farm_id: str, farm_name: str):
     import database as db
@@ -418,7 +475,7 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     elif cmd == "/neues_tier":
         return cmd_neues_tier(args, farm_id)
     elif cmd == "/besamung":
-        return cmd_ereignis(args, "besamung", farm_id)
+        return cmd_besamung(args, farm_id)
     elif cmd == "/brunft":
         return cmd_ereignis(args, "brunft", farm_id)
     elif cmd == "/geburt":
@@ -433,7 +490,7 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     return None
 
 
-# ─── Tägliche Morgen-Nachricht ───────────────────────────────────────────────────────────────────────────────
+# ─── Tägliche Morgen-Nachricht ────────────────────────────────────────────────────
 
 def send_daily_update(app):
     with app.app_context():
@@ -466,7 +523,7 @@ def send_daily_update(app):
             send_message(token, chat_id, "\n".join(lines))
 
 
-# ─── Polling-Thread ────────────────────────────────────────────────────────────────────────────────────
+# ─── Polling-Thread ───────────────────────────────────────────────────────────────
 
 def polling_worker(app):
     import database as db
@@ -527,7 +584,7 @@ def polling_worker(app):
         time.sleep(3)
 
 
-# ─── Start ───────────────────────────────────────────────────────────────────────────────────────
+# ─── Start ────────────────────────────────────────────────────────────────────────
 
 def start_scheduler(app):
     try:

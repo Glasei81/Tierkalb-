@@ -34,6 +34,11 @@
             <input type="date" name="datum" class="form-control"
                    value="{{ heute }}" required>
           </div>
+          <div class="mb-3" id="besamungKostenWrap" style="display:none">
+            <label class="form-label fw-semibold">Besamungskosten (€) <span class="text-muted fw-normal">— optional</span></label>
+            <input type="number" name="betrag" class="form-control"
+                   min="0" step="0.01" placeholder="z.B. 85">
+          </div>
           <div class="mb-4">
             <label class="form-label fw-semibold">Notiz (optional)</label>
             <textarea name="notiz" class="form-control" rows="2"
@@ -50,4 +55,16 @@
     </div>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const radios = document.querySelectorAll('input[name="typ"]');
+  const kostenWrap = document.getElementById('besamungKostenWrap');
+  function updateKosten() {
+    const checked = document.querySelector('input[name="typ"]:checked');
+    kostenWrap.style.display = (checked && checked.value === 'besamung') ? '' : 'none';
+  }
+  radios.forEach(r => r.addEventListener('change', updateKosten));
+  updateKosten();
+</script>
 {% endblock %}

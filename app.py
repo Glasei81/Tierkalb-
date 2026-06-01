@@ -35,7 +35,7 @@ def _load_secret_key() -> str:
 app.secret_key = os.environ.get("SECRET_KEY") or _load_secret_key()
 
 
-# ─── Helpers ───────────────────────────────────────────────────────────────────────────────────
+# ─── Helpers ──────────────────────────────────────────────────────────────────────
 
 def get_farm_id():
     if "farm_id" in session:
@@ -79,7 +79,7 @@ def t(key):
     return I18N.get(lang, I18N["de"]).get(key, key)
 
 
-# ─── Setup ────────────────────────────────────────────────────────────────────────────────────
+# ─── Setup ────────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -107,7 +107,7 @@ def setup():
     return render_template("setup.html", t=t, TIERARTEN=TIERARTEN)
 
 
-# ─── Dashboard ─────────────────────────────────────────────────────────────────────────────────
+# ─── Dashboard ────────────────────────────────────────────────────────────────────
 
 @app.route("/dashboard")
 @require_farm
@@ -136,7 +136,7 @@ def dashboard():
         gesamtkosten=gesamtkosten, t=t)
 
 
-# ─── Tier CRUD ─────────────────────────────────────────────────────────────────────────────────
+# ─── Tier CRUD ────────────────────────────────────────────────────────────────────
 
 @app.route("/tier/neu", methods=["GET", "POST"])
 @require_farm
@@ -228,7 +228,7 @@ def tier_archivieren(tier_id):
     return redirect(url_for("dashboard"))
 
 
-# ─── Ereignisse ─────────────────────────────────────────────────────────────────────────────────────
+# ─── Ereignisse ───────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/ereignis/neu", methods=["GET", "POST"])
 @require_farm
@@ -238,12 +238,21 @@ def ereignis_neu(tier_id):
     if not tier:
         return redirect(url_for("dashboard"))
     if request.method == "POST":
+        typ = request.form.get("typ", "sonstiges")
+        ereignis_datum = request.form.get("datum", date.today().isoformat())
         db.add_ereignis(
-            fid, tier_id,
-            request.form.get("typ", "sonstiges"),
-            request.form.get("datum", date.today().isoformat()),
+            fid, tier_id, typ, ereignis_datum,
             request.form.get("notiz", "").strip(),
         )
+        if typ == "besamung":
+            betrag_str = request.form.get("betrag", "").strip()
+            if betrag_str:
+                try:
+                    betrag = float(betrag_str.replace(",", "."))
+                    if betrag > 0:
+                        db.add_kosten(fid, tier_id, "Besamung", betrag, ereignis_datum)
+                except ValueError:
+                    pass
         flash("Ereignis eingetragen.", "success")
         return redirect(url_for("tier_detail", tier_id=tier_id))
     return render_template("ereignis_form.html",
@@ -261,7 +270,7 @@ def ereignis_loeschen(tier_id, ereignis_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Kosten ────────────────────────────────────────────────────────────────────────────────────
+# ─── Kosten ───────────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/kosten/neu", methods=["GET", "POST"])
 @require_farm
@@ -299,7 +308,7 @@ def kosten_loeschen(tier_id, kosten_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Statistik ─────────────────────────────────────────────────────────────────────────────────────
+# ─── Statistik ────────────────────────────────────────────────────────────────────
 
 @app.route("/statistik")
 @require_farm
@@ -314,7 +323,7 @@ def statistik():
         t=t)
 
 
-# ─── Export ─────────────────────────────────────────────────────────────────────────────────────
+# ─── Export ───────────────────────────────────────────────────────────────────────
 
 @app.route("/export/csv")
 @require_farm
@@ -458,7 +467,7 @@ def export_pdf():
                      as_attachment=True, download_name=filename)
 
 
-# ─── Spenden ───────────────────────────────────────────────────────────────────────────────────
+# ─── Spenden ──────────────────────────────────────────────────────────────────────
 
 @app.route("/spenden")
 @require_farm
@@ -468,7 +477,7 @@ def spenden():
     return render_template("spenden.html", tier_count=tier_count, t=t)
 
 
-# ─── Einstellungen ─────────────────────────────────────────────────────────────────────────────────────
+# ─── Einstellungen ────────────────────────────────────────────────────────────────
 
 @app.route("/einstellungen", methods=["GET", "POST"])
 @require_farm
@@ -491,7 +500,7 @@ def einstellungen():
         t=t)
 
 
-# ─── Telegram Test ──────────────────────────────────────────────────────────────────────────────────
+# ─── Telegram Test ────────────────────────────────────────────────────────────────
 
 @app.route("/telegram/test", methods=["POST"])
 @require_farm
@@ -509,7 +518,7 @@ def telegram_test():
     return redirect(url_for("einstellungen"))
 
 
-# ─── Error Handler ─────────────────────────────────────────────────────────────────────────────────
+# ─── Error Handler ────────────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
 def not_found(e):
