@@ -2,7 +2,7 @@
 telegram_bot.py — Telegram Bot für Tierkalb v3.1
 
 Ausgabe:
-  - Täglich 6:00 Uhr: Geburten-Benachrichtigung
+  - Täglich 6:00 Uhr: Geburten + Trächtigkeitskontrolle-Erinnerungen
   - /status      — Vollständiger Überblick
   - /tiere       — Alle Tiere auflisten
 
@@ -24,8 +24,19 @@ import time
 import requests
 from datetime import date, timedelta
 
+TK_FENSTER = 7  # Tage, die die TK-Erinnerung sichtbar bleibt
 
-# ─── Telegram API Basis ───────────────────────────────────────────────────────────
+# Trächtigkeitskontrolle-Tage je Tierart (ab Tag X nach Besamung)
+_TK_TAGE = {
+    "Rinder":   28,
+    "Schafe":   20,
+    "Schweine": 21,
+    "Ziegen":   20,
+    "Hühner":    7,
+}
+
+
+# ─── Telegram API Basis ────────────────────────────────────────────────────────
 
 def send_message(token: str, chat_id: str, text: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -59,7 +70,7 @@ def get_updates(token: str, offset: int = 0) -> list:
 def set_bot_commands(token: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/setMyCommands"
     commands = [
-        {"command": "status",     "description": "Brunft, Trächtigkeit, Geburten"},
+        {"command": "status",     "description": "Brunft, Trächtigkeit, Geburten, TK-Kontrolle"},
         {"command": "tiere",      "description": "Alle Tiere auflisten"},
         {"command": "neues_tier", "description": "Neues Tier anlegen: /neues_tier Name Tierart"},
         {"command": "besamung",   "description": "Besamung: /besamung Emma [Datum] [Kosten €]"},
@@ -78,7 +89,7 @@ def set_bot_commands(token: str) -> bool:
         return False
 
 
-# ─── Tier suchen ──────────────────────────────────────────────────────────────────
+# ─── Tier suchen ───────────────────────────────────────────────────────────────
 
 def find_tier(tiere: list, suchname: str):
     s = suchname.lower().strip()
@@ -117,7 +128,55 @@ def datum_parsen(datum_str: str):
     return None
 
 
-# ─── Ausgabe-Nachrichten ──────────────────────────────────────────────────────────
+# ─── Trächtigkeitskontrolle ────────────────────────────────────────────────────
+
+def build_tk_liste(farm_id: str) -> list:
+    """Tiere deren TK-Fenster (tk_tage bis tk_tage+7) heute aktiv ist."""
+    import database as db
+
+    heute = date.today()
+    tiere = db.get_alle_tiere(farm_id)
+    result = []
+
+    for tier in tiere:
+        if not tier.get("tragzeit"):
+            continue
+
+        tk_tage = _TK_TAGE.get(tier.get("tierart_name", ""), 0)
+        if not tk_tage:
+            continue
+
+        lb = db.get_letztes_ereignis(tier["id"], farm_id, "besamung")
+        if not lb:
+            continue
+
+        bes_d = date.fromisoformat(lb["datum"])
+        tage_seit = (heute - bes_d).days
+
+        if not (tk_tage <= tage_seit <= tk_tage + TK_FENSTER):
+            continue
+
+        # Kein neuer Zyklus nach der Besamung (würde bedeuten: nicht trächtig)
+        lb_brunft = db.get_letztes_ereignis(tier["id"], farm_id, "brunft")
+        if lb_brunft and date.fromisoformat(lb_brunft["datum"]) > bes_d:
+            continue
+
+        # Keine Geburt nach der Besamung (würde bedeuten: schon gekalbt)
+        lb_geburt = db.get_letztes_ereignis(tier["id"], farm_id, "geburt")
+        if lb_geburt and date.fromisoformat(lb_geburt["datum"]) > bes_d:
+            continue
+
+        result.append({
+            "tier":      tier,
+            "bes_datum": bes_d,
+            "tage_seit": tage_seit,
+            "tk_tage":   tk_tage,
+        })
+
+    return result
+
+
+# ─── Ausgabe-Nachrichten ───────────────────────────────────────────────────────
 
 def build_status_message(farm_id: str, farm_name: str) -> str:
     import database as db
@@ -144,6 +203,20 @@ def build_status_message(farm_id: str, farm_name: str) -> str:
                 lines.append(f"  🟡 {emoji} {name} — in {tage} Tagen ({datum})")
             else:
                 lines.append(f"  🟢 {emoji} {name} — in {tage} Tagen ({datum})")
+        lines.append("")
+
+    tk_liste = build_tk_liste(farm_id)
+    if tk_liste:
+        lines.append("🔬 <b>TRÄCHTIGKEITSKONTROLLE FÄLLIG:</b>")
+        for tk in tk_liste:
+            t       = tk["tier"]
+            em      = t.get("emoji", "🐄")
+            tage    = tk["tage_seit"]
+            bes_fmt = tk["bes_datum"].strftime("%d.%m.%Y")
+            lines.append(
+                f"  🔬 {em} <b>{t['name']}</b> — besamt {bes_fmt} ({tage}d)\n"
+                f"    ↳ Trächtig? Wenn nein: /brunft {t['name']}"
+            )
         lines.append("")
 
     upcoming_namen = {u["name"] for u in upcoming}
@@ -234,7 +307,7 @@ def build_status_message(farm_id: str, farm_name: str) -> str:
     lines.append(f"  Tiere aktiv: {len(tiere)}")
     if mk and mk[-1]["gesamt"] > 0:
         lines.append(f"  Kosten diesen Monat: {mk[-1]['gesamt']:.0f} €")
-    if not any([upcoming, brunft_faellig, traechtig_liste, nie_besamt]):
+    if not any([upcoming, tk_liste, brunft_faellig, traechtig_liste, nie_besamt]):
         lines.append("  Alles ruhig — keine dringenden Aktionen ✅")
     lines.append("\n💡 Eingabe z.B.: /besamung Emma")
     return "\n".join(lines)
@@ -257,7 +330,7 @@ def build_hilfe_message(farm_name: str) -> str:
     return (
         f"<b>🐄 Tierkalb — {farm_name}</b>\n\n"
         "<b>Abfragen:</b>\n"
-        "/status — Brunft, Trächtigkeit, Geburten\n"
+        "/status — Brunft, Trächtigkeit, Geburten, TK-Kontrolle\n"
         "/tiere  — Alle Tiere auflisten\n\n"
         "<b>Neues Tier anlegen:</b>\n"
         "/neues_tier Emma Rind     — Kuh namens Emma anlegen\n"
@@ -271,12 +344,15 @@ def build_hilfe_message(farm_name: str) -> str:
         "/impfung Emma             — Impfung heute\n"
         "/tierarzt Emma 150        — Tierarzt 150 €\n"
         "/kosten Emma 80           — Sonstige Kosten 80 €\n\n"
+        "<b>Trächtigkeitskontrolle:</b>\n"
+        "Erscheint automatisch in /status wenn die Kontrolle fällig ist.\n"
+        "War die Kontrolle negativ → /brunft Emma\n\n"
         "<i>Namen können abgekürzt werden: /besamung em findet Emma</i>\n"
-        "<i>Täglich 6:00 Uhr: automatische Geburts-Meldung</i>"
+        "<i>Täglich 6:00 Uhr: automatische Geburts- und TK-Meldung</i>"
     )
 
 
-# ─── Befehle: Eingabe ─────────────────────────────────────────────────────────────
+# ─── Befehle: Eingabe ──────────────────────────────────────────────────────────
 
 def cmd_neues_tier(args: list, farm_id: str) -> str:
     import database as db
@@ -315,14 +391,6 @@ def cmd_neues_tier(args: list, farm_id: str) -> str:
 
 
 def cmd_besamung(args: list, farm_id: str) -> str:
-    """Besamung eintragen mit optionalem Datum und optionalen Kosten.
-
-    Syntax:
-      /besamung Emma
-      /besamung Emma 85
-      /besamung Emma 24.05.
-      /besamung Emma 24.05. 85
-    """
     import database as db
 
     if not args:
@@ -334,7 +402,6 @@ def cmd_besamung(args: list, farm_id: str) -> str:
     kosten = None
     teile = list(args)
 
-    # Letztes Argument: Kosten (Zahl)?
     if len(teile) >= 2:
         try:
             kosten = float(teile[-1].replace(",", "."))
@@ -342,7 +409,6 @@ def cmd_besamung(args: list, farm_id: str) -> str:
         except ValueError:
             pass
 
-    # Letztes verbleibendes Argument: Datum?
     if len(teile) >= 2:
         d = datum_parsen(teile[-1])
         if d:
@@ -370,6 +436,11 @@ def cmd_besamung(args: list, farm_id: str) -> str:
     if tier.get("tragzeit"):
         erw = ereignis_datum + timedelta(days=tier["tragzeit"])
         antwort += f"\n📅 Erwartete Geburt: <b>{erw.strftime('%d.%m.%Y')}</b>"
+
+    tk_tage = _TK_TAGE.get(tier.get("tierart_name", ""), 0)
+    if tk_tage:
+        tk_datum = ereignis_datum + timedelta(days=tk_tage)
+        antwort += f"\n🔬 Trächtigkeitskontrolle: ab <b>{tk_datum.strftime('%d.%m.%Y')}</b>"
 
     return antwort
 
@@ -402,7 +473,6 @@ def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
 
     db.add_ereignis(farm_id, tier["id"], typ, ereignis_datum.isoformat())
 
-    emoji  = tier.get("emoji", "🐄")
     dat_fmt = ereignis_datum.strftime("%d.%m.%Y")
     labels  = {
         "besamung": "💉 Besamung",
@@ -453,7 +523,7 @@ def cmd_kosten(args: list, typ: str, farm_id: str) -> str:
     )
 
 
-# ─── Befehl-Router ────────────────────────────────────────────────────────────────
+# ─── Befehl-Router ─────────────────────────────────────────────────────────────
 
 def handle_command(text: str, farm_id: str, farm_name: str):
     import database as db
@@ -490,7 +560,7 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     return None
 
 
-# ─── Tägliche Morgen-Nachricht ────────────────────────────────────────────────────
+# ─── Tägliche Morgen-Nachricht ─────────────────────────────────────────────────
 
 def send_daily_update(app):
     with app.app_context():
@@ -501,29 +571,45 @@ def send_daily_update(app):
             chat_id = db.get_config(fid, "telegram_chat_id", "")
             if not token or not chat_id:
                 continue
+
             upcoming = db.get_upcoming_geburten(fid, days=14)
-            if not upcoming:
+            tk_liste = build_tk_liste(fid)
+
+            if not upcoming and not tk_liste:
                 continue
+
             lines = [f"<b>🌅 Guten Morgen! — {farm['name']}</b>"]
-            lines.append("Geburten in den nächsten 14 Tagen:\n")
-            for u in upcoming:
-                tage  = u.get("tage_bis_geburt", 0)
-                emoji = u.get("emoji", "🐄")
-                name  = u["name"]
-                datum = u.get("erwartete_geburt_fmt", "")
-                if tage <= 0:
-                    lines.append(f"🔴 {emoji} <b>{name}</b> — heute!")
-                elif tage == 1:
-                    lines.append(f"🟠 {emoji} <b>{name}</b> — morgen ({datum})")
-                elif tage <= 3:
-                    lines.append(f"🟡 {emoji} {name} — in {tage} Tagen ({datum})")
-                else:
-                    lines.append(f"🟢 {emoji} {name} — in {tage} Tagen ({datum})")
+
+            if upcoming:
+                lines.append("\nGeburten in den nächsten 14 Tagen:")
+                for u in upcoming:
+                    tage  = u.get("tage_bis_geburt", 0)
+                    emoji = u.get("emoji", "🐄")
+                    name  = u["name"]
+                    datum = u.get("erwartete_geburt_fmt", "")
+                    if tage <= 0:
+                        lines.append(f"🔴 {emoji} <b>{name}</b> — heute!")
+                    elif tage == 1:
+                        lines.append(f"🟠 {emoji} <b>{name}</b> — morgen ({datum})")
+                    elif tage <= 3:
+                        lines.append(f"🟡 {emoji} {name} — in {tage} Tagen ({datum})")
+                    else:
+                        lines.append(f"🟢 {emoji} {name} — in {tage} Tagen ({datum})")
+
+            if tk_liste:
+                lines.append("\n🔬 <b>Trächtigkeitskontrolle fällig:</b>")
+                for tk in tk_liste:
+                    t       = tk["tier"]
+                    em      = t.get("emoji", "🐄")
+                    tage    = tk["tage_seit"]
+                    bes_fmt = tk["bes_datum"].strftime("%d.%m.%Y")
+                    lines.append(f"  {em} <b>{t['name']}</b> — besamt {bes_fmt} ({tage}d)")
+
             lines.append("\n💡 /status für vollständigen Überblick")
             send_message(token, chat_id, "\n".join(lines))
 
 
-# ─── Polling-Thread ───────────────────────────────────────────────────────────────
+# ─── Polling-Thread ────────────────────────────────────────────────────────────
 
 def polling_worker(app):
     import database as db
@@ -584,7 +670,7 @@ def polling_worker(app):
         time.sleep(3)
 
 
-# ─── Start ────────────────────────────────────────────────────────────────────────
+# ─── Start ─────────────────────────────────────────────────────────────────────
 
 def start_scheduler(app):
     try:
