@@ -1,21 +1,5 @@
 """
 telegram_bot.py — Telegram Bot für Tierkalb v3.0
-
-Ausgabe:
-  - Täglich 6:00 Uhr: Geburten-Benachrichtigung
-  - /status   — Vollständiger Überblick
-  - /tiere    — Alle Tiere auflisten
-
-Eingabe (direkt aus dem Stall):
-  - /besamung <tier>             — Besamung heute eintragen
-  - /brunft   <tier>             — Brunft heute eintragen
-  - /geburt   <tier>             — Geburt heute eintragen
-  - /impfung  <tier>             — Impfung heute eintragen
-  - /tierarzt <tier> <betrag>    — Tierarzt-Kosten eintragen
-  - /kosten   <tier> <betrag>    — Sonstige Kosten eintragen
-  - /hilfe                       — Befehlsliste
-
-Einrichtung: Token + Chat-ID in der App unter Einstellungen eintragen.
 """
 
 import threading
@@ -24,7 +8,7 @@ import requests
 from datetime import date, timedelta
 
 
-# ─── Telegram API Basis ──────────────────────────────────────────────────
+# ─── Telegram API ────────────────────────────────────────────────────────────
 
 def send_message(token: str, chat_id: str, text: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -55,7 +39,31 @@ def get_updates(token: str, offset: int = 0) -> list:
     return []
 
 
-# ─── Tier suchen (case-insensitiv, Teilstring) ────────────────────────────────────────────
+def set_bot_commands(token: str) -> bool:
+    """Registriert alle Bot-Befehle in Telegram (Autocomplete-Menü)."""
+    url = f"https://api.telegram.org/bot{token}/setMyCommands"
+    commands = [
+        {"command": "status",   "description": "Überblick: Brunft, Trächtigkeit, Geburten"},
+        {"command": "tiere",    "description": "Alle aktiven Tiere auflisten"},
+        {"command": "hilfe",    "description": "Befehlsliste anzeigen"},
+        {"command": "besamung", "description": "Besamung eintragen (z.B. /besamung Emma)"},
+        {"command": "brunft",   "description": "Brunft eintragen (z.B. /brunft Emma)"},
+        {"command": "geburt",   "description": "Geburt eintragen (z.B. /geburt Emma)"},
+        {"command": "impfung",  "description": "Impfung eintragen (z.B. /impfung Emma)"},
+        {"command": "tierarzt", "description": "Tierarzt-Kosten (z.B. /tierarzt Emma 150)"},
+        {"command": "kosten",   "description": "Sonstige Kosten (z.B. /kosten Emma 80)"},
+    ]
+    try:
+        r = requests.post(url, json={"commands": commands}, timeout=10)
+        if r.ok:
+            print(f"[Telegram] Bot-Befehle registriert")
+        return r.ok
+    except Exception as e:
+        print(f"[Telegram] Befehle setzen fehlgeschlagen: {e}")
+        return False
+
+
+# ─── Tier suchen ─────────────────────────────────────────────────────────────
 
 def find_tier(tiere: list, suchname: str):
     s = suchname.lower().strip()
@@ -94,7 +102,7 @@ def datum_parsen(datum_str: str):
     return None
 
 
-# ─── Befehle: Ausgabe ───────────────────────────────────────────────────────────────
+# ─── Befehle: Ausgabe ────────────────────────────────────────────────────────
 
 def build_status_message(farm_id: str, farm_name: str) -> str:
     import database as db
@@ -249,7 +257,7 @@ def build_hilfe_message(farm_name: str) -> str:
     )
 
 
-# ─── Befehle: Eingabe ───────────────────────────────────────────────────────────────
+# ─── Befehle: Eingabe ────────────────────────────────────────────────────────
 
 def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
     import database as db
@@ -279,7 +287,7 @@ def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
 
     db.add_ereignis(farm_id, tier["id"], typ, ereignis_datum.isoformat())
 
-    emoji  = tier.get("emoji", "🐄")
+    emoji   = tier.get("emoji", "🐄")
     dat_fmt = ereignis_datum.strftime("%d.%m.%Y")
     labels  = {
         "besamung": "💉 Besamung",
@@ -287,7 +295,7 @@ def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
         "geburt":   "🐣 Geburt",
         "impfung":  "💊 Impfung",
     }
-    label = labels.get(typ, typ.capitalize())
+    label   = labels.get(typ, typ.capitalize())
     antwort = f"✅ {label} für <b>{tier['name']}</b> eingetragen ({dat_fmt})."
 
     if typ == "besamung" and tier.get("tragzeit"):
@@ -334,7 +342,7 @@ def cmd_kosten(args: list, typ: str, farm_id: str) -> str:
     )
 
 
-# ─── Befehl-Router ─────────────────────────────────────────────────────────────────
+# ─── Befehl-Router ───────────────────────────────────────────────────────────
 
 def handle_command(text: str, farm_id: str, farm_name: str):
     import database as db
@@ -369,7 +377,7 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     return None
 
 
-# ─── Tägliche Morgen-Nachricht ────────────────────────────────────────────────────────
+# ─── Tägliche Morgen-Nachricht ───────────────────────────────────────────────
 
 def send_daily_update(app):
     with app.app_context():
@@ -402,14 +410,15 @@ def send_daily_update(app):
             send_message(token, chat_id, "\n".join(lines))
 
 
-# ─── Polling-Thread ────────────────────────────────────────────────────────────────
+# ─── Polling-Thread ──────────────────────────────────────────────────────────
 
 def polling_worker(app):
     import database as db
 
-    offsets     = {}
-    config      = {}
-    last_reload = 0
+    offsets         = {}
+    config          = {}
+    last_reload     = 0
+    commands_set    = set()   # tokens für die Befehle bereits registriert wurden
 
     while True:
         now = time.time()
@@ -432,6 +441,10 @@ def polling_worker(app):
                         }
                         if token not in offsets:
                             offsets[token] = 0
+                        # Befehle einmalig pro Token registrieren
+                        if token not in commands_set:
+                            set_bot_commands(token)
+                            commands_set.add(token)
                 config      = new_cfg
                 last_reload = now
             except Exception as e:
@@ -459,7 +472,7 @@ def polling_worker(app):
         time.sleep(3)
 
 
-# ─── Start ────────────────────────────────────────────────────────────────────────
+# ─── Start ───────────────────────────────────────────────────────────────────
 
 def start_scheduler(app):
     try:
