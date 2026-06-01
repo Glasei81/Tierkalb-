@@ -14,7 +14,7 @@
     </div>
     <div class="card">
       <div class="card-body p-4">
-        <form method="POST">
+        <form method="POST" id="tierForm">
           <div class="row g-3">
             <div class="col-md-8">
               <label class="form-label">Name *</label>
@@ -28,8 +28,11 @@
                      placeholder="AT 123456789">
             </div>
             <div class="col-md-6">
-              <label class="form-label">Tierart</label>
-              <select name="tierart_id" class="form-select">
+              <label class="form-label">
+                Tierart
+                <span class="text-muted small">(für Geburtstermin-Berechnung)</span>
+              </label>
+              <select name="tierart_id" class="form-select" id="tierartSelect">
                 <option value="">-- bitte wählen --</option>
                 {% for ta in tierarten %}
                 <option value="{{ ta.id }}"
@@ -38,6 +41,9 @@
                 </option>
                 {% endfor %}
               </select>
+              <div id="tierartWarnung" class="text-warning small mt-1" style="display:none">
+                ⚠️ Ohne Tierart kann kein Geburtstermin berechnet werden.
+              </div>
             </div>
             <div class="col-md-6">
               <label class="form-label">Geschlecht</label>
@@ -78,4 +84,21 @@
     </div>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+const sel = document.getElementById('tierartSelect');
+const warn = document.getElementById('tierartWarnung');
+sel.addEventListener('change', () => {
+    warn.style.display = sel.value ? 'none' : 'block';
+});
+document.getElementById('tierForm').addEventListener('submit', function(e) {
+    if (!sel.value) {
+        warn.style.display = 'block';
+        if (!confirm('⚠️ Keine Tierart ausgewählt.\nOhne Tierart wird kein Geburtstermin berechnet.\n\nTrotzdem speichern?')) {
+            e.preventDefault();
+        }
+    }
+});
+</script>
 {% endblock %}

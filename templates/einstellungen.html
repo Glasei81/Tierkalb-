@@ -6,7 +6,6 @@
     <h4 class="fw-bold mb-4"><i class="bi bi-gear"></i> Einstellungen</h4>
 
     <form method="POST">
-      {# Allgemein #}
       <div class="card mb-4">
         <div class="card-header green"><strong>Allgemein</strong></div>
         <div class="card-body">
@@ -24,23 +23,21 @@
         </div>
       </div>
 
-      {# Telegram #}
       <div class="card mb-4">
         <div class="card-header" style="background:#0088cc;color:white">
           <strong><i class="bi bi-telegram"></i> Telegram-Benachrichtigungen</strong>
         </div>
         <div class="card-body">
           <p class="text-muted small">
-            Täglich um 6:00 Uhr erhältst du eine Nachricht mit anstehenden Geburten
-            (nächste 14 Tage). Du brauchst einen Telegram-Bot-Token und deine Chat-ID.
+            Täglich um 6:00 Uhr erhältst du eine Nachricht mit anstehenden Geburten.
+            Du kannst auch direkt aus dem Stall Ereignisse eintragen.
           </p>
           <div class="alert alert-light border small">
-            <strong>So richtest du es ein:</strong><br>
-            1. Schreibe <code>@BotFather</code> auf Telegram: <code>/newbot</code><br>
-            2. Kopiere den <strong>Bot-Token</strong> hierher.<br>
-            3. Schreibe deinem Bot eine Nachricht, dann gib in
-               <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>
-               die Chat-ID ab und trage sie unten ein.
+            <strong>Einrichtung:</strong><br>
+            1. <code>@BotFather</code> auf Telegram → <code>/newbot</code> → Token kopieren<br>
+            2. <code>@userinfobot</code> auf Telegram → <code>/start</code> → deine Chat-ID kopieren<br>
+            3. Beide Werte unten eintragen und speichern<br>
+            4. Mit „Testnachricht senden“ prüfen ob alles klappt
           </div>
           <div class="mb-3">
             <label class="form-label">Bot-Token</label>
@@ -48,25 +45,36 @@
                    value="{{ telegram_token }}"
                    placeholder="123456789:AAFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
           </div>
-          <div>
+          <div class="mb-3">
             <label class="form-label">Chat-ID</label>
             <input type="text" name="telegram_chat_id" class="form-control font-monospace"
                    value="{{ telegram_chat_id }}"
-                   placeholder="-1001234567890 oder 123456789">
+                   placeholder="123456789">
           </div>
           {% if telegram_token and telegram_chat_id %}
-          <div class="mt-2">
+          <div class="mb-2">
             <span class="badge bg-success">✅ Telegram konfiguriert</span>
           </div>
           {% endif %}
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary">
-        <i class="bi bi-check-lg"></i> Speichern
-      </button>
-      <a href="/dashboard" class="btn btn-outline-secondary ms-2">Abbrechen</a>
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i> Speichern
+        </button>
+        <a href="/dashboard" class="btn btn-outline-secondary">Abbrechen</a>
+      </div>
     </form>
+
+    {% if telegram_token and telegram_chat_id %}
+    <form method="POST" action="/telegram/test" class="mt-3">
+      <button type="submit" class="btn btn-outline-info">
+        <i class="bi bi-send"></i> Testnachricht senden
+      </button>
+    </form>
+    {% endif %}
+
   </div>
 </div>
 {% endblock %}
