@@ -1,5 +1,22 @@
 """
 telegram_bot.py — Telegram Bot für Tierkalb v3.1
+
+Ausgabe:
+  - Täglich 6:00 Uhr: Geburten-Benachrichtigung
+  - /status      — Vollständiger Überblick
+  - /tiere       — Alle Tiere auflisten
+
+Eingabe (direkt aus dem Stall):
+  - /neues_tier  <name> <tierart>      — Neues Tier anlegen
+  - /besamung    <tier>                — Besamung heute eintragen
+  - /brunft      <tier>                — Brunft heute eintragen
+  - /geburt      <tier>                — Geburt heute eintragen
+  - /impfung     <tier>                — Impfung heute eintragen
+  - /tierarzt    <tier> <betrag>       — Tierarzt-Kosten eintragen
+  - /kosten      <tier> <betrag>       — Sonstige Kosten eintragen
+  - /hilfe                             — Befehlsliste
+
+Einrichtung: Token + Chat-ID in der App unter Einstellungen eintragen.
 """
 
 import threading
@@ -8,7 +25,7 @@ import requests
 from datetime import date, timedelta
 
 
-# ─── Telegram API ─────────────────────────────────────────────────────────────────
+# ─── Telegram API Basis ─────────────────────────────────────────────────────────────────────────────────────
 
 def send_message(token: str, chat_id: str, text: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -42,28 +59,26 @@ def get_updates(token: str, offset: int = 0) -> list:
 def set_bot_commands(token: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/setMyCommands"
     commands = [
-        {"command": "status",     "description": "Überblick: Brunft, Trächtigkeit, Geburten"},
-        {"command": "tiere",      "description": "Alle aktiven Tiere auflisten"},
-        {"command": "hilfe",      "description": "Befehlsliste anzeigen"},
-        {"command": "neues_tier", "description": "Tier anlegen (z.B. /neues_tier Emma Rind)"},
-        {"command": "besamung",   "description": "Besamung eintragen (z.B. /besamung Emma)"},
-        {"command": "brunft",     "description": "Brunft eintragen (z.B. /brunft Emma)"},
-        {"command": "geburt",     "description": "Geburt eintragen (z.B. /geburt Emma)"},
-        {"command": "impfung",    "description": "Impfung eintragen (z.B. /impfung Emma)"},
-        {"command": "tierarzt",   "description": "Tierarzt-Kosten (z.B. /tierarzt Emma 150)"},
-        {"command": "kosten",     "description": "Sonstige Kosten (z.B. /kosten Emma 80)"},
+        {"command": "status",     "description": "Brunft, Trächtigkeit, Geburten"},
+        {"command": "tiere",      "description": "Alle Tiere auflisten"},
+        {"command": "neues_tier", "description": "Neues Tier anlegen: /neues_tier Name Tierart"},
+        {"command": "besamung",   "description": "Besamung eintragen: /besamung Emma"},
+        {"command": "brunft",     "description": "Brunft eintragen: /brunft Emma"},
+        {"command": "geburt",     "description": "Geburt eintragen: /geburt Emma"},
+        {"command": "impfung",    "description": "Impfung eintragen: /impfung Emma"},
+        {"command": "tierarzt",   "description": "Tierarzt-Kosten: /tierarzt Emma 150"},
+        {"command": "kosten",     "description": "Sonstige Kosten: /kosten Emma 80"},
+        {"command": "hilfe",      "description": "Alle Befehle anzeigen"},
     ]
     try:
         r = requests.post(url, json={"commands": commands}, timeout=10)
-        if r.ok:
-            print("[Telegram] Bot-Befehle registriert")
         return r.ok
     except Exception as e:
-        print(f"[Telegram] Befehle setzen fehlgeschlagen: {e}")
+        print(f"[Telegram] setMyCommands Fehler: {e}")
         return False
 
 
-# ─── Tier suchen ──────────────────────────────────────────────────────────────────
+# ─── Tier suchen (case-insensitiv, Teilstring) ───────────────────────────────────────────────────
 
 def find_tier(tiere: list, suchname: str):
     s = suchname.lower().strip()
@@ -102,7 +117,7 @@ def datum_parsen(datum_str: str):
     return None
 
 
-# ─── Befehle: Ausgabe ─────────────────────────────────────────────────────────────
+# ─── Befehle: Ausgabe ────────────────────────────────────────────────────────────────────────────────────────
 
 def build_status_message(farm_id: str, farm_name: str) -> str:
     import database as db
@@ -150,7 +165,7 @@ def build_status_message(farm_id: str, farm_name: str) -> str:
 
         if traechtig:
             if tier["name"] not in upcoming_namen:
-                bes_d = date.fromisoformat(lb["datum"])
+                bes_d  = date.fromisoformat(lb["datum"])
                 traechtig_liste.append({
                     "tier": tier, "bes_datum": bes_d,
                     "erw": bes_d + timedelta(days=tier["tragzeit"]),
@@ -227,14 +242,14 @@ def build_status_message(farm_id: str, farm_name: str) -> str:
 
 def build_tiere_message(tiere: list, farm_name: str) -> str:
     if not tiere:
-        return "🐄 Noch keine Tiere eingetragen. Nutze /neues_tier Emma Rind"
+        return "🐄 Noch keine Tiere eingetragen. Bitte in der App anlegen."
     lines = [f"<b>🐄 Tiere — {farm_name}:</b>\n"]
     for t in tiere:
         em  = t.get("emoji", "🐄")
         art = t.get("tierart_name") or ""
         oh  = f" [{t['ohrmarke']}]" if t.get("ohrmarke") else ""
         lines.append(f"  {em} <b>{t['name']}</b>{oh} — {art}")
-    lines.append("\nEingabe z.B.: /besamung Emma | Neu: /neues_tier Emma Rind")
+    lines.append("\nEingabe z.B.: /besamung Emma")
     return "\n".join(lines)
 
 
@@ -244,9 +259,9 @@ def build_hilfe_message(farm_name: str) -> str:
         "<b>Abfragen:</b>\n"
         "/status — Brunft, Trächtigkeit, Geburten\n"
         "/tiere  — Alle Tiere auflisten\n\n"
-        "<b>Tier anlegen:</b>\n"
-        "/neues_tier Emma Rind  — Neue Kuh anlegen\n"
-        "/neues_tier Bella Schaf — Neues Schaf anlegen\n\n"
+        "<b>Neues Tier anlegen:</b>\n"
+        "/neues_tier Emma Rind     — Kuh namens Emma anlegen\n"
+        "/neues_tier Wolke Schaf   — Schaf namens Wolke anlegen\n\n"
         "<b>Eingabe (aus dem Stall):</b>\n"
         "/besamung Emma        — Besamung heute\n"
         "/besamung Emma 24.05. — Besamung mit Datum\n"
@@ -260,7 +275,7 @@ def build_hilfe_message(farm_name: str) -> str:
     )
 
 
-# ─── Neues Tier anlegen ───────────────────────────────────────────────────────────
+# ─── Befehle: Eingabe ────────────────────────────────────────────────────────────────────────────────────────
 
 def cmd_neues_tier(args: list, farm_id: str) -> str:
     import database as db
@@ -298,8 +313,6 @@ def cmd_neues_tier(args: list, farm_id: str) -> str:
     )
 
 
-# ─── Befehle: Eingabe ─────────────────────────────────────────────────────────────
-
 def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
     import database as db
 
@@ -328,7 +341,7 @@ def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
 
     db.add_ereignis(farm_id, tier["id"], typ, ereignis_datum.isoformat())
 
-    emoji   = tier.get("emoji", "🐄")
+    emoji  = tier.get("emoji", "🐄")
     dat_fmt = ereignis_datum.strftime("%d.%m.%Y")
     labels  = {
         "besamung": "💉 Besamung",
@@ -336,7 +349,7 @@ def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
         "geburt":   "🐣 Geburt",
         "impfung":  "💊 Impfung",
     }
-    label   = labels.get(typ, typ.capitalize())
+    label = labels.get(typ, typ.capitalize())
     antwort = f"✅ {label} für <b>{tier['name']}</b> eingetragen ({dat_fmt})."
 
     if typ == "besamung" and tier.get("tragzeit"):
@@ -383,7 +396,7 @@ def cmd_kosten(args: list, typ: str, farm_id: str) -> str:
     )
 
 
-# ─── Befehl-Router ────────────────────────────────────────────────────────────────
+# ─── Befehl-Router ─────────────────────────────────────────────────────────────────────────────────
 
 def handle_command(text: str, farm_id: str, farm_name: str):
     import database as db
@@ -420,7 +433,7 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     return None
 
 
-# ─── Tägliche Morgen-Nachricht ────────────────────────────────────────────────────
+# ─── Tägliche Morgen-Nachricht ───────────────────────────────────────────────────────────────────────────────
 
 def send_daily_update(app):
     with app.app_context():
@@ -453,15 +466,15 @@ def send_daily_update(app):
             send_message(token, chat_id, "\n".join(lines))
 
 
-# ─── Polling-Thread ───────────────────────────────────────────────────────────────
+# ─── Polling-Thread ────────────────────────────────────────────────────────────────────────────────────
 
 def polling_worker(app):
     import database as db
 
-    offsets      = {}
-    config       = {}
-    last_reload  = 0
-    commands_set = set()
+    offsets       = {}
+    config        = {}
+    commands_set  = set()
+    last_reload   = 0
 
     while True:
         now = time.time()
@@ -485,8 +498,8 @@ def polling_worker(app):
                         if token not in offsets:
                             offsets[token] = 0
                         if token not in commands_set:
-                            set_bot_commands(token)
-                            commands_set.add(token)
+                            if set_bot_commands(token):
+                                commands_set.add(token)
                 config      = new_cfg
                 last_reload = now
             except Exception as e:
@@ -514,7 +527,7 @@ def polling_worker(app):
         time.sleep(3)
 
 
-# ─── Start ────────────────────────────────────────────────────────────────────────
+# ─── Start ───────────────────────────────────────────────────────────────────────────────────────
 
 def start_scheduler(app):
     try:
