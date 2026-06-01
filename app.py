@@ -1,6 +1,5 @@
 """
-app.py — Tierkalb v3.0
-Farm-Management: Tiere, Ereignisse, Kosten, Statistik, Export
+app.py — Tierkalb v3.1
 """
 
 import os
@@ -18,18 +17,44 @@ import database as db
 from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", os.urandom(24).hex())
 
 
-# ─── Helpers ──────────────────────────────────────────────────────────────────────────────────
+def _load_secret_key() -> str:
+    key_file = os.path.join("data", "secret.key")
+    os.makedirs("data", exist_ok=True)
+    if os.path.exists(key_file):
+        key = open(key_file).read().strip()
+        if key:
+            return key
+    key = os.urandom(32).hex()
+    with open(key_file, "w") as f:
+        f.write(key)
+    return key
+
+
+app.secret_key = os.environ.get("SECRET_KEY") or _load_secret_key()
+
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────────
 
 def get_farm_id():
     if "farm_id" in session:
         return session["farm_id"]
-    fid = request.args.get("farm_id") or request.form.get("farm_id")
+    fid = (request.args.get("farm_id")
+           or request.form.get("farm_id")
+           or request.cookies.get("farm_id"))
     if fid:
         session["farm_id"] = fid
     return fid
+
+
+@app.after_request
+def persist_farm_cookie(response):
+    fid = session.get("farm_id")
+    if fid:
+        response.set_cookie("farm_id", fid, max_age=365*24*60*60,
+                            httponly=True, samesite="Lax")
+    return response
 
 
 def require_farm(f):
@@ -52,7 +77,7 @@ def t(key):
     return I18N.get(lang, I18N["de"]).get(key, key)
 
 
-# ─── Setup ──────────────────────────────────────────────────────────────────────────────────
+# ─── Setup ─────────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -80,7 +105,7 @@ def setup():
     return render_template("setup.html", t=t, TIERARTEN=TIERARTEN)
 
 
-# ─── Dashboard ───────────────────────────────────────────────────────────────────────────
+# ─── Dashboard ────────────────────────────────────────────────────────────────────
 
 @app.route("/dashboard")
 @require_farm
@@ -109,7 +134,7 @@ def dashboard():
         gesamtkosten=gesamtkosten, t=t)
 
 
-# ─── Tier CRUD ───────────────────────────────────────────────────────────────────────────
+# ─── Tier CRUD ────────────────────────────────────────────────────────────────────
 
 @app.route("/tier/neu", methods=["GET", "POST"])
 @require_farm
@@ -201,7 +226,7 @@ def tier_archivieren(tier_id):
     return redirect(url_for("dashboard"))
 
 
-# ─── Ereignisse ──────────────────────────────────────────────────────────────────────────────
+# ─── Ereignisse ───────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/ereignis/neu", methods=["GET", "POST"])
 @require_farm
@@ -234,7 +259,7 @@ def ereignis_loeschen(tier_id, ereignis_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Kosten ─────────────────────────────────────────────────────────────────────────────
+# ─── Kosten ───────────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/kosten/neu", methods=["GET", "POST"])
 @require_farm
@@ -272,7 +297,7 @@ def kosten_loeschen(tier_id, kosten_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Statistik ─────────────────────────────────────────────────────────────────────────────
+# ─── Statistik ────────────────────────────────────────────────────────────────────
 
 @app.route("/statistik")
 @require_farm
@@ -287,7 +312,7 @@ def statistik():
         t=t)
 
 
-# ─── Export ─────────────────────────────────────────────────────────────────────────────
+# ─── Export ───────────────────────────────────────────────────────────────────────
 
 @app.route("/export/csv")
 @require_farm
@@ -431,7 +456,25 @@ def export_pdf():
                      as_attachment=True, download_name=filename)
 
 
-# ─── Spenden ───────────────────────────────────────────────────────────────────────────
+# ─── Telegram Test ────────────────────────────────────────────────────────────────
+
+@app.route("/telegram/test", methods=["POST"])
+@require_farm
+def telegram_test():
+    fid = get_farm_id()
+    token   = db.get_config(fid, "telegram_token", "")
+    chat_id = db.get_config(fid, "telegram_chat_id", "")
+    if not token or not chat_id:
+        flash("Bitte Token und Chat-ID eingeben und speichern.", "error")
+        return redirect(url_for("einstellungen"))
+    from telegram_bot import send_message
+    ok = send_message(token, chat_id, "✅ Tierkalb — Verbindung erfolgreich! 🐄")
+    flash("✅ Testnachricht gesendet!" if ok else "❌ Fehler — Token oder Chat-ID prüfen.",
+          "success" if ok else "error")
+    return redirect(url_for("einstellungen"))
+
+
+# ─── Spenden ──────────────────────────────────────────────────────────────────────
 
 @app.route("/spenden")
 @require_farm
@@ -441,7 +484,7 @@ def spenden():
     return render_template("spenden.html", tier_count=tier_count, t=t)
 
 
-# ─── Einstellungen ─────────────────────────────────────────────────────────────────────────
+# ─── Einstellungen ────────────────────────────────────────────────────────────────
 
 @app.route("/einstellungen", methods=["GET", "POST"])
 @require_farm
@@ -464,7 +507,7 @@ def einstellungen():
         t=t)
 
 
-# ─── Error Handler ────────────────────────────────────────────────────────────────────────
+# ─── Error Handler ────────────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
 def not_found(e):
