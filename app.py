@@ -35,7 +35,7 @@ def _load_secret_key() -> str:
 app.secret_key = os.environ.get("SECRET_KEY") or _load_secret_key()
 
 
-# ─── Helpers ──────────────────────────────────────────────────────────────────────
+# ─── Helpers ─────────────────────────────────────────────────────────────────────
 
 def get_farm_id():
     if "farm_id" in session:
@@ -45,6 +45,10 @@ def get_farm_id():
         or request.form.get("farm_id")
         or request.cookies.get("farm_id")
     )
+    if not fid:
+        farms = db.get_all_farms()
+        if len(farms) == 1:
+            fid = farms[0]["id"]
     if fid:
         session["farm_id"] = fid
     return fid
@@ -79,7 +83,7 @@ def t(key):
     return I18N.get(lang, I18N["de"]).get(key, key)
 
 
-# ─── Setup ────────────────────────────────────────────────────────────────────────
+# ─── Setup ───────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -107,7 +111,7 @@ def setup():
     return render_template("setup.html", t=t, TIERARTEN=TIERARTEN)
 
 
-# ─── Dashboard ────────────────────────────────────────────────────────────────────
+# ─── Dashboard ───────────────────────────────────────────────────────────────────
 
 @app.route("/dashboard")
 @require_farm
@@ -136,7 +140,7 @@ def dashboard():
         gesamtkosten=gesamtkosten, t=t)
 
 
-# ─── Tier CRUD ────────────────────────────────────────────────────────────────────
+# ─── Tier CRUD ───────────────────────────────────────────────────────────────────
 
 @app.route("/tier/neu", methods=["GET", "POST"])
 @require_farm
@@ -228,7 +232,7 @@ def tier_archivieren(tier_id):
     return redirect(url_for("dashboard"))
 
 
-# ─── Ereignisse ───────────────────────────────────────────────────────────────────
+# ─── Ereignisse ──────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/ereignis/neu", methods=["GET", "POST"])
 @require_farm
@@ -270,7 +274,7 @@ def ereignis_loeschen(tier_id, ereignis_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Kosten ───────────────────────────────────────────────────────────────────────
+# ─── Kosten ─────────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/kosten/neu", methods=["GET", "POST"])
 @require_farm
@@ -308,7 +312,7 @@ def kosten_loeschen(tier_id, kosten_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Statistik ────────────────────────────────────────────────────────────────────
+# ─── Statistik ───────────────────────────────────────────────────────────────────
 
 @app.route("/statistik")
 @require_farm
@@ -323,7 +327,7 @@ def statistik():
         t=t)
 
 
-# ─── Export ───────────────────────────────────────────────────────────────────────
+# ─── Export ─────────────────────────────────────────────────────────────────────
 
 @app.route("/export/csv")
 @require_farm
@@ -467,7 +471,7 @@ def export_pdf():
                      as_attachment=True, download_name=filename)
 
 
-# ─── Spenden ──────────────────────────────────────────────────────────────────────
+# ─── Spenden ─────────────────────────────────────────────────────────────────────
 
 @app.route("/spenden")
 @require_farm
@@ -477,7 +481,7 @@ def spenden():
     return render_template("spenden.html", tier_count=tier_count, t=t)
 
 
-# ─── Einstellungen ────────────────────────────────────────────────────────────────
+# ─── Einstellungen ───────────────────────────────────────────────────────────────
 
 @app.route("/einstellungen", methods=["GET", "POST"])
 @require_farm
@@ -500,7 +504,7 @@ def einstellungen():
         t=t)
 
 
-# ─── Telegram Test ────────────────────────────────────────────────────────────────
+# ─── Telegram Test ─────────────────────────────────────────────────────────────
 
 @app.route("/telegram/test", methods=["POST"])
 @require_farm
@@ -518,7 +522,7 @@ def telegram_test():
     return redirect(url_for("einstellungen"))
 
 
-# ─── Error Handler ────────────────────────────────────────────────────────────────
+# ─── Error Handler ─────────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
 def not_found(e):
