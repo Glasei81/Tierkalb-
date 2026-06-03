@@ -1,6 +1,5 @@
 """
-app.py — Tierkalb v3.0
-Farm-Management: Tiere, Ereignisse, Kosten, Statistik, Export
+app.py — Tierkalb v3.2
 """
 
 import os
@@ -18,18 +17,59 @@ import database as db
 from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", os.urandom(24).hex())
+
+# Kosteneintrag aus Ereignis und umgekehrt
+_EREIGNIS_KOSTEN_MAP = {
+    "besamung":  "Besamung",
+    "impfung":   "Impfung",
+    "tierarzt":  "Tierarzt",
+    "sonstiges": "Sonstiges",
+}
+_KOSTEN_EREIGNIS_MAP = {v: k for k, v in _EREIGNIS_KOSTEN_MAP.items()}
 
 
-# ─── Helpers ───────────────────────────────────────────────────────────────────────
+def _load_secret_key() -> str:
+    key_file = os.path.join("data", "secret.key")
+    os.makedirs("data", exist_ok=True)
+    if os.path.exists(key_file):
+        key = open(key_file).read().strip()
+        if key:
+            return key
+    key = os.urandom(32).hex()
+    with open(key_file, "w") as f:
+        f.write(key)
+    return key
+
+
+app.secret_key = os.environ.get("SECRET_KEY") or _load_secret_key()
+
+
+# ─── Helpers ─────────────────────────────────────────────────────────────────────
 
 def get_farm_id():
     if "farm_id" in session:
         return session["farm_id"]
-    fid = request.args.get("farm_id") or request.form.get("farm_id")
+    fid = (
+        request.args.get("farm_id")
+        or request.form.get("farm_id")
+        or request.cookies.get("farm_id")
+    )
+    if not fid:
+        farms = db.get_all_farms()
+        if len(farms) == 1:
+            fid = farms[0]["id"]
     if fid:
         session["farm_id"] = fid
     return fid
+
+
+@app.after_request
+def persist_farm_cookie(response):
+    fid = session.get("farm_id")
+    if fid:
+        response.set_cookie("farm_id", fid, max_age=365 * 24 * 60 * 60,
+                            httponly=True, samesite="Lax")
+    return response
 
 
 def require_farm(f):
@@ -52,7 +92,7 @@ def t(key):
     return I18N.get(lang, I18N["de"]).get(key, key)
 
 
-# ─── Setup ────────────────────────────────────────────────────────────────────────
+# ─── Setup ───────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -80,7 +120,7 @@ def setup():
     return render_template("setup.html", t=t, TIERARTEN=TIERARTEN)
 
 
-# ─── Dashboard ──────────────────────────────────────────────────────────────────
+# ─── Dashboard ───────────────────────────────────────────────────────────────────
 
 @app.route("/dashboard")
 @require_farm
@@ -109,7 +149,7 @@ def dashboard():
         gesamtkosten=gesamtkosten, t=t)
 
 
-# ─── Tier CRUD ─────────────────────────────────────────────────────────────────
+# ─── Tier CRUD ───────────────────────────────────────────────────────────────────
 
 @app.route("/tier/neu", methods=["GET", "POST"])
 @require_farm
@@ -211,12 +251,21 @@ def ereignis_neu(tier_id):
     if not tier:
         return redirect(url_for("dashboard"))
     if request.method == "POST":
+        typ = request.form.get("typ", "sonstiges")
+        ereignis_datum = request.form.get("datum", date.today().isoformat())
         db.add_ereignis(
-            fid, tier_id,
-            request.form.get("typ", "sonstiges"),
-            request.form.get("datum", date.today().isoformat()),
+            fid, tier_id, typ, ereignis_datum,
             request.form.get("notiz", "").strip(),
         )
+        if typ in _EREIGNIS_KOSTEN_MAP:
+            betrag_str = request.form.get("betrag", "").strip()
+            if betrag_str:
+                try:
+                    betrag = float(betrag_str.replace(",", "."))
+                    if betrag > 0:
+                        db.add_kosten(fid, tier_id, _EREIGNIS_KOSTEN_MAP[typ], betrag, ereignis_datum)
+                except ValueError:
+                    pass
         flash("Ereignis eingetragen.", "success")
         return redirect(url_for("tier_detail", tier_id=tier_id))
     return render_template("ereignis_form.html",
@@ -234,7 +283,7 @@ def ereignis_loeschen(tier_id, ereignis_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Kosten ────────────────────────────────────────────────────────────────────
+# ─── Kosten ─────────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/kosten/neu", methods=["GET", "POST"])
 @require_farm
@@ -248,18 +297,26 @@ def kosten_neu(tier_id):
             betrag = float(request.form.get("betrag", "0").replace(",", "."))
         except ValueError:
             betrag = 0.0
+        kosten_typ = request.form.get("typ", "Sonstiges")
+        kosten_datum = request.form.get("datum", date.today().isoformat())
+        kosten_notiz = request.form.get("notiz", "").strip()
         db.add_kosten(
             fid, tier_id,
-            request.form.get("typ", "Sonstiges"),
+            kosten_typ,
             betrag,
-            request.form.get("datum", date.today().isoformat()),
-            request.form.get("notiz", "").strip(),
+            kosten_datum,
+            kosten_notiz,
         )
+        # Automatisch auch als Ereignis eintragen (außer Futter & Medikamente)
+        ereignis_typ = _KOSTEN_EREIGNIS_MAP.get(kosten_typ)
+        if ereignis_typ:
+            db.add_ereignis(fid, tier_id, ereignis_typ, kosten_datum, kosten_notiz)
         flash(f"{betrag:.2f} € eingetragen.", "success")
         return redirect(url_for("tier_detail", tier_id=tier_id))
     return render_template("kosten_form.html",
         tier=tier, t=t,
         KOSTEN_TYPEN=KOSTEN_TYPEN,
+        KOSTEN_EREIGNIS_MAP=_KOSTEN_EREIGNIS_MAP,
         heute=date.today().isoformat())
 
 
@@ -281,13 +338,14 @@ def statistik():
     return render_template("statistik.html",
         kosten_pro_tier=db.get_kosten_pro_tier(fid),
         kosten_pro_typ=db.get_kosten_pro_typ(fid),
+        kosten_pro_tierart=db.get_kosten_pro_tierart(fid),
         kosten_pro_monat=db.get_kosten_pro_monat(fid, monate=12),
         besamungs_stats=db.get_besamungs_statistik(fid),
         gesamtkosten=db.get_gesamtkosten(fid),
         t=t)
 
 
-# ─── Export ────────────────────────────────────────────────────────────────────
+# ─── Export ─────────────────────────────────────────────────────────────────────
 
 @app.route("/export/csv")
 @require_farm
@@ -431,7 +489,7 @@ def export_pdf():
                      as_attachment=True, download_name=filename)
 
 
-# ─── Spenden ───────────────────────────────────────────────────────────────────
+# ─── Spenden ─────────────────────────────────────────────────────────────────────
 
 @app.route("/spenden")
 @require_farm
@@ -464,7 +522,25 @@ def einstellungen():
         t=t)
 
 
-# ─── Error Handler ───────────────────────────────────────────────────────────────
+# ─── Telegram Test ─────────────────────────────────────────────────────────────
+
+@app.route("/telegram/test", methods=["POST"])
+@require_farm
+def telegram_test():
+    fid = get_farm_id()
+    token   = db.get_config(fid, "telegram_token", "")
+    chat_id = db.get_config(fid, "telegram_chat_id", "")
+    if not token or not chat_id:
+        flash("Bitte Token und Chat-ID eingeben und speichern.", "error")
+        return redirect(url_for("einstellungen"))
+    from telegram_bot import send_message
+    ok = send_message(token, chat_id, "✅ Tierkalb — Verbindung erfolgreich! 🐄")
+    flash("✅ Testnachricht gesendet!" if ok else "❌ Fehler — Token oder Chat-ID prüfen.",
+          "success" if ok else "error")
+    return redirect(url_for("einstellungen"))
+
+
+# ─── Error Handler ─────────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
 def not_found(e):

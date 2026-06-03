@@ -50,12 +50,22 @@
   </div>
   {% endif %}
 
-{# Chart 3: Monatsverlauf #}
+{# Chart 3: Kosten nach Tierart #}
+  {% if kosten_pro_tierart %}
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-tag"></i> Kosten nach Tierart</h6>
+      <canvas id="chartTierart" height="220"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+{# Chart 4: Monatsverlauf #}
   {% if kosten_pro_monat %}
-  <div class="col-12">
+  <div class="col-{% if kosten_pro_tierart %}md-6{% else %}12{% endif %}">
     <div class="card p-3">
       <h6 class="fw-bold mb-3"><i class="bi bi-graph-up"></i> Monatsverlauf (letzte 12 Monate)</h6>
-      <canvas id="chartMonat" height="120"></canvas>
+      <canvas id="chartMonat" height="{% if kosten_pro_tierart %}220{% else %}120{% endif %}"></canvas>
     </div>
   </div>
   {% endif %}
@@ -157,6 +167,29 @@ if (typData.length) {
           }
         }
       }
+    }
+  });
+}
+{% endif %}
+
+{% if kosten_pro_tierart %}
+const tierartData = {{ kosten_pro_tierart | tojson }};
+if (tierartData.length) {
+  new Chart(document.getElementById('chartTierart'), {
+    type: 'bar',
+    data: {
+      labels: tierartData.map(d => d.emoji + ' ' + d.tierart_name),
+      datasets: [{
+        label: 'EUR',
+        data: tierartData.map(d => d.gesamt),
+        backgroundColor: COLORS,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
     }
   });
 }

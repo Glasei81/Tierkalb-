@@ -1,5 +1,5 @@
 """
-database.py — SQLite für Tierkalb v3.0
+database.py — SQLite für Tierkalb v3.2
 """
 
 import sqlite3
@@ -399,6 +399,25 @@ def get_kosten_pro_typ(farm_id: str) -> list:
         SELECT typ, COALESCE(SUM(betrag), 0) AS gesamt
         FROM kosten WHERE farm_id=?
         GROUP BY typ ORDER BY gesamt DESC
+    """, (farm_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_kosten_pro_tierart(farm_id: str) -> list:
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT
+            COALESCE(ta.name, 'Unbekannt') AS tierart_name,
+            COALESCE(ta.emoji, '🐾') AS emoji,
+            COALESCE(SUM(k.betrag), 0) AS gesamt
+        FROM tiere t
+        LEFT JOIN tierarten ta ON t.tierart_id = ta.id
+        LEFT JOIN kosten k ON k.tier_id = t.id AND k.farm_id = t.farm_id
+        WHERE t.farm_id = ? AND t.status = 'Aktiv'
+        GROUP BY ta.id
+        HAVING gesamt > 0
+        ORDER BY gesamt DESC
     """, (farm_id,)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
