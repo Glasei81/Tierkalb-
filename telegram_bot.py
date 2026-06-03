@@ -1,5 +1,5 @@
 """
-telegram_bot.py — Telegram Bot für Tierkalb v3.1
+telegram_bot.py — Telegram Bot für Tierkalb v3.2
 
 Ausgabe:
   - Täglich 6:00 Uhr: Geburten + Trächtigkeitskontrolle-Erinnerungen
@@ -36,7 +36,7 @@ _TK_TAGE = {
 }
 
 
-# ─── Telegram API Basis ────────────────────────────────────────────────────────
+# ─── Telegram API Basis ──────────────────────────────────────────────
 
 def send_message(token: str, chat_id: str, text: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -89,7 +89,7 @@ def set_bot_commands(token: str) -> bool:
         return False
 
 
-# ─── Tier suchen ───────────────────────────────────────────────────────────────
+# ─── Tier suchen ───────────────────────────────────────────────
 
 def find_tier(tiere: list, suchname: str):
     s = suchname.lower().strip()
@@ -128,7 +128,7 @@ def datum_parsen(datum_str: str):
     return None
 
 
-# ─── Trächtigkeitskontrolle ────────────────────────────────────────────────────
+# ─── Trächtigkeitskontrolle ────────────────────────────────────────────
 
 def build_tk_liste(farm_id: str) -> list:
     """Tiere deren TK-Fenster (tk_tage bis tk_tage+7) heute aktiv ist."""
@@ -139,6 +139,8 @@ def build_tk_liste(farm_id: str) -> list:
     result = []
 
     for tier in tiere:
+        if tier.get("geschlecht") == "männlich":
+            continue
         if not tier.get("tragzeit"):
             continue
 
@@ -156,12 +158,10 @@ def build_tk_liste(farm_id: str) -> list:
         if not (tk_tage <= tage_seit <= tk_tage + TK_FENSTER):
             continue
 
-        # Kein neuer Zyklus nach der Besamung (würde bedeuten: nicht trächtig)
         lb_brunft = db.get_letztes_ereignis(tier["id"], farm_id, "brunft")
         if lb_brunft and date.fromisoformat(lb_brunft["datum"]) > bes_d:
             continue
 
-        # Keine Geburt nach der Besamung (würde bedeuten: schon gekalbt)
         lb_geburt = db.get_letztes_ereignis(tier["id"], farm_id, "geburt")
         if lb_geburt and date.fromisoformat(lb_geburt["datum"]) > bes_d:
             continue
@@ -176,7 +176,7 @@ def build_tk_liste(farm_id: str) -> list:
     return result
 
 
-# ─── Ausgabe-Nachrichten ───────────────────────────────────────────────────────
+# ─── Ausgabe-Nachrichten ───────────────────────────────────────────────
 
 def build_status_message(farm_id: str, farm_name: str) -> str:
     import database as db
@@ -225,8 +225,12 @@ def build_status_message(farm_id: str, farm_name: str) -> str:
     nie_besamt      = []
 
     for tier in tiere:
+        # Männliche Tiere benötigen keine Brunft/Besamungs-Logik
+        if tier.get("geschlecht") == "männlich":
+            continue
         if not tier.get("tragzeit"):
             continue
+
         lb  = db.get_letztes_ereignis(tier["id"], farm_id, "besamung")
         lbr = db.get_letztes_ereignis(tier["id"], farm_id, "brunft")
         lg  = db.get_letztes_ereignis(tier["id"], farm_id, "geburt")
@@ -321,7 +325,8 @@ def build_tiere_message(tiere: list, farm_name: str) -> str:
         em  = t.get("emoji", "🐄")
         art = t.get("tierart_name") or ""
         oh  = f" [{t['ohrmarke']}]" if t.get("ohrmarke") else ""
-        lines.append(f"  {em} <b>{t['name']}</b>{oh} — {art}")
+        geschlecht = " (♂)" if t.get("geschlecht") == "männlich" else ""
+        lines.append(f"  {em} <b>{t['name']}</b>{oh}{geschlecht} — {art}")
     lines.append("\nEingabe z.B.: /besamung Emma")
     return "\n".join(lines)
 
@@ -352,7 +357,7 @@ def build_hilfe_message(farm_name: str) -> str:
     )
 
 
-# ─── Befehle: Eingabe ──────────────────────────────────────────────────────────
+# ─── Befehle: Eingabe ──────────────────────────────────────────────
 
 def cmd_neues_tier(args: list, farm_id: str) -> str:
     import database as db
@@ -386,7 +391,7 @@ def cmd_neues_tier(args: list, farm_id: str) -> str:
     return (
         f"✅ {tierart['emoji']} <b>{name}</b> wurde angelegt.\n"
         f"Tierart: {tierart['name']}\n"
-        f"📝 Ohrmarke und Geburtsdatum kannst du in der App ergänzen."
+        f"📝 Ohrmarke, Geburtsdatum und Geschlecht kannst du in der App ergänzen."
     )
 
 
@@ -423,6 +428,9 @@ def cmd_besamung(args: list, farm_id: str) -> str:
         return f"❓ Mehrere Tiere gefunden: {namen}\nBitte genauer angeben."
     if not tier:
         return tier_nicht_gefunden(suchname, tiere)
+
+    if tier.get("geschlecht") == "männlich":
+        return f"❌ <b>{tier['name']}</b> ist männlich — Besamung nicht möglich."
 
     db.add_ereignis(farm_id, tier["id"], "besamung", ereignis_datum.isoformat())
 
@@ -471,6 +479,10 @@ def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
     if not tier:
         return tier_nicht_gefunden(suchname, tiere)
 
+    # Brunft/Besamung bei männlichen Tieren abweisen
+    if typ in ("brunft", "besamung") and tier.get("geschlecht") == "männlich":
+        return f"❌ <b>{tier['name']}</b> ist männlich — {typ.capitalize()} nicht möglich."
+
     db.add_ereignis(farm_id, tier["id"], typ, ereignis_datum.isoformat())
 
     dat_fmt = ereignis_datum.strftime("%d.%m.%Y")
@@ -478,7 +490,7 @@ def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
         "besamung": "💉 Besamung",
         "brunft":   "🌸 Brunft",
         "geburt":   "🐣 Geburt",
-        "impfung":  "💊 Impfung",
+        "impfung":  "\ud83d� Impfung",
     }
     label = labels.get(typ, typ.capitalize())
     antwort = f"✅ {label} für <b>{tier['name']}</b> eingetragen ({dat_fmt})."
@@ -523,7 +535,7 @@ def cmd_kosten(args: list, typ: str, farm_id: str) -> str:
     )
 
 
-# ─── Befehl-Router ─────────────────────────────────────────────────────────────
+# ─── Befehl-Router ──────────────────────────────────────────────
 
 def handle_command(text: str, farm_id: str, farm_name: str):
     import database as db
@@ -560,7 +572,7 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     return None
 
 
-# ─── Tägliche Morgen-Nachricht ─────────────────────────────────────────────────
+# ─── Tägliche Morgen-Nachricht ────────────────────────────────────────────
 
 def send_daily_update(app):
     with app.app_context():
@@ -609,7 +621,7 @@ def send_daily_update(app):
             send_message(token, chat_id, "\n".join(lines))
 
 
-# ─── Polling-Thread ────────────────────────────────────────────────────────────
+# ─── Polling-Thread ──────────────────────────────────────────────
 
 def polling_worker(app):
     import database as db
@@ -670,7 +682,7 @@ def polling_worker(app):
         time.sleep(3)
 
 
-# ─── Start ─────────────────────────────────────────────────────────────────────
+# ─── Start ─────────────────────────────────────────────────────────────────
 
 def start_scheduler(app):
     try:
