@@ -1,5 +1,5 @@
 """
-app.py — Tierkalb v3.1
+app.py — Tierkalb v3.2
 """
 
 import os
@@ -17,6 +17,15 @@ import database as db
 from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN
 
 app = Flask(__name__)
+
+# Kosteneintrag aus Ereignis und umgekehrt
+_EREIGNIS_KOSTEN_MAP = {
+    "besamung":  "Besamung",
+    "impfung":   "Impfung",
+    "tierarzt":  "Tierarzt",
+    "sonstiges": "Sonstiges",
+}
+_KOSTEN_EREIGNIS_MAP = {v: k for k, v in _EREIGNIS_KOSTEN_MAP.items()}
 
 
 def _load_secret_key() -> str:
@@ -248,13 +257,13 @@ def ereignis_neu(tier_id):
             fid, tier_id, typ, ereignis_datum,
             request.form.get("notiz", "").strip(),
         )
-        if typ == "besamung":
+        if typ in _EREIGNIS_KOSTEN_MAP:
             betrag_str = request.form.get("betrag", "").strip()
             if betrag_str:
                 try:
                     betrag = float(betrag_str.replace(",", "."))
                     if betrag > 0:
-                        db.add_kosten(fid, tier_id, "Besamung", betrag, ereignis_datum)
+                        db.add_kosten(fid, tier_id, _EREIGNIS_KOSTEN_MAP[typ], betrag, ereignis_datum)
                 except ValueError:
                     pass
         flash("Ereignis eingetragen.", "success")
@@ -288,18 +297,26 @@ def kosten_neu(tier_id):
             betrag = float(request.form.get("betrag", "0").replace(",", "."))
         except ValueError:
             betrag = 0.0
+        kosten_typ = request.form.get("typ", "Sonstiges")
+        kosten_datum = request.form.get("datum", date.today().isoformat())
+        kosten_notiz = request.form.get("notiz", "").strip()
         db.add_kosten(
             fid, tier_id,
-            request.form.get("typ", "Sonstiges"),
+            kosten_typ,
             betrag,
-            request.form.get("datum", date.today().isoformat()),
-            request.form.get("notiz", "").strip(),
+            kosten_datum,
+            kosten_notiz,
         )
+        # Automatisch auch als Ereignis eintragen (außer Futter & Medikamente)
+        ereignis_typ = _KOSTEN_EREIGNIS_MAP.get(kosten_typ)
+        if ereignis_typ:
+            db.add_ereignis(fid, tier_id, ereignis_typ, kosten_datum, kosten_notiz)
         flash(f"{betrag:.2f} € eingetragen.", "success")
         return redirect(url_for("tier_detail", tier_id=tier_id))
     return render_template("kosten_form.html",
         tier=tier, t=t,
         KOSTEN_TYPEN=KOSTEN_TYPEN,
+        KOSTEN_EREIGNIS_MAP=_KOSTEN_EREIGNIS_MAP,
         heute=date.today().isoformat())
 
 
@@ -321,6 +338,7 @@ def statistik():
     return render_template("statistik.html",
         kosten_pro_tier=db.get_kosten_pro_tier(fid),
         kosten_pro_typ=db.get_kosten_pro_typ(fid),
+        kosten_pro_tierart=db.get_kosten_pro_tierart(fid),
         kosten_pro_monat=db.get_kosten_pro_monat(fid, monate=12),
         besamungs_stats=db.get_besamungs_statistik(fid),
         gesamtkosten=db.get_gesamtkosten(fid),
