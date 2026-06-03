@@ -76,11 +76,14 @@
 {# Tierliste #}
 {% if tiere %}
 <div class="card">
-  <div class="card-header green">
+  <div class="card-header green d-flex justify-content-between align-items-center flex-wrap gap-2">
     <strong><i class="bi bi-list-ul"></i> Alle Tiere</strong>
+    <div id="tierartFilter" class="d-flex flex-wrap gap-1">
+      <button class="btn btn-sm btn-light active" data-filter="">Alle</button>
+    </div>
   </div>
   <div class="table-responsive">
-    <table class="table table-hover mb-0">
+    <table class="table table-hover mb-0" id="tierTabelle">
       <thead>
         <tr>
           <th>Tier</th>
@@ -92,7 +95,9 @@
       </thead>
       <tbody>
       {% for tier in tiere %}
-        <tr class="{{ 'table-warning' if tier.get('geburt_bald') }}">
+        <tr class="{{ 'table-warning' if tier.get('geburt_bald') }}"
+            data-tierart="{{ tier.tierart_name or '' }}"
+            data-emoji="{{ tier.emoji or '' }}">
           <td>
             <span class="tier-emoji">{{ tier.emoji or '🐄' }}</span>
             <strong>{{ tier.name }}</strong>
@@ -128,4 +133,46 @@
   </a>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const rows = document.querySelectorAll('#tierTabelle tbody tr');
+  const filterBar = document.getElementById('tierartFilter');
+  if (!filterBar || !rows.length) return;
+
+  // Eindeutige Tierarten aus den Zeilen lesen
+  const seen = new Map();
+  rows.forEach(r => {
+    const ta = r.dataset.tierart;
+    if (ta && !seen.has(ta)) seen.set(ta, r.dataset.emoji);
+  });
+
+  // Filter-Buttons nur anzeigen wenn mehr als eine Tierart vorhanden
+  if (seen.size < 2) return;
+
+  seen.forEach((emoji, name) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm btn-outline-light';
+    btn.dataset.filter = name;
+    btn.textContent = (emoji ? emoji + ' ' : '') + name;
+    filterBar.appendChild(btn);
+  });
+
+  filterBar.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-filter]');
+    if (!btn) return;
+    filterBar.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('active', b === btn);
+      b.classList.toggle('btn-light', b === btn);
+      b.classList.toggle('btn-outline-light', b !== btn);
+    });
+    const filter = btn.dataset.filter;
+    rows.forEach(r => {
+      r.style.display = (!filter || r.dataset.tierart === filter) ? '' : 'none';
+    });
+  });
+})();
+</script>
 {% endblock %}
