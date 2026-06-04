@@ -64,6 +64,36 @@
 </div>
 {% endif %}
 
+{# Besamungs-Übersicht #}
+{% if besamungen_count > 0 %}
+<div class="card mb-4">
+  <div class="card-header" style="background:#1565c0;color:white">
+    <strong>💉 Besamungs-Übersicht</strong>
+  </div>
+  <div class="card-body">
+    <div class="row text-center">
+      <div class="col-4">
+        <div class="text-muted small">Besamungen</div>
+        <div class="fs-4 fw-bold">{{ besamungen_count }}</div>
+      </div>
+      <div class="col-4">
+        <div class="text-muted small">Geburten</div>
+        <div class="fs-4 fw-bold text-success">{{ geburten_count }}</div>
+      </div>
+      <div class="col-4">
+        <div class="text-muted small">Besamungskosten</div>
+        <div class="fs-4 fw-bold text-danger">{{ "%.0f"|format(besamungskosten) }} €</div>
+      </div>
+    </div>
+    {% if geburten_count > 0 and besamungskosten > 0 %}
+    <div class="text-center mt-2 text-muted small">
+      Ø {{ "%.0f"|format(besamungskosten / geburten_count) }} € pro Geburt
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
 <div class="row g-4">
 
 {# Ereignisse #}
