@@ -1,11 +1,10 @@
-# Tierart-Konfigurationen für Tierkalb v3.1
+# Tierart-Konfigurationen für Tierkalb v3.3
 
 TIERARTEN = {
     "Rinder":   {"brunft": 21,   "tragzeit": 280, "tk_tage": 28, "label": "Kalben",      "emoji": "🐄"},
     "Schafe":   {"brunft": 17,   "tragzeit": 150, "tk_tage": 20, "label": "Lammzeit",    "emoji": "🐑"},
     "Schweine": {"brunft": 21,   "tragzeit": 114, "tk_tage": 21, "label": "Abferkelung", "emoji": "🐷"},
     "Ziegen":   {"brunft": 21,   "tragzeit": 150, "tk_tage": 20, "label": "Kitzung",     "emoji": "🐐"},
-    "Hühner":   {"brunft": None, "tragzeit": 21,  "tk_tage":  7, "label": "Schlupf",     "emoji": "🐔"},
 }
 
 KOSTEN_TYPEN = [

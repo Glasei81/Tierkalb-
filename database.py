@@ -1,5 +1,5 @@
 """
-database.py — SQLite für Tierkalb v3.2
+database.py — SQLite für Tierkalb v3.3
 """
 
 import sqlite3
@@ -420,3 +420,58 @@ def get_besamungs_statistik(farm_id):
         d["erfolgsrate"] = round(g / b * 100) if b > 0 else 0
         result.append(d)
     return result
+
+
+def get_kosten_pro_geburt(farm_id):
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT t.id AS tier_id, t.name AS tier_name,
+               COALESCE(ta.emoji, '🐄') AS emoji,
+               COUNT(DISTINCT e_g.id) AS geburten,
+               COALESCE(SUM(k.betrag), 0) AS besamungskosten
+        FROM tiere t
+        LEFT JOIN tierarten ta ON t.tierart_id = ta.id
+        LEFT JOIN ereignisse e_g ON e_g.tier_id = t.id AND e_g.farm_id = t.farm_id AND e_g.typ = 'geburt'
+        LEFT JOIN kosten k ON k.tier_id = t.id AND k.farm_id = t.farm_id AND k.typ = 'Besamung'
+        WHERE t.farm_id = ? AND t.status = 'Aktiv'
+          AND EXISTS (
+              SELECT 1 FROM ereignisse e_b
+              WHERE e_b.tier_id = t.id AND e_b.farm_id = t.farm_id AND e_b.typ = 'besamung'
+          )
+        GROUP BY t.id
+        ORDER BY besamungskosten DESC
+    """, (farm_id,)).fetchall()
+    conn.close()
+    result = []
+    for r in rows:
+        d = dict(r)
+        conn2 = get_connection()
+        d["besamungen"] = conn2.execute(
+            "SELECT COUNT(*) FROM ereignisse WHERE tier_id=? AND farm_id=? AND typ='besamung'",
+            (d["tier_id"], farm_id)).fetchone()[0]
+        conn2.close()
+        g  = d["geburten"] or 0
+        bk = d["besamungskosten"] or 0
+        d["kosten_pro_geburt"] = round(bk / g, 2) if g > 0 else None
+        result.append(d)
+    return result
+
+
+def get_faellige_impfungen(farm_id, vorlauf_tage=30):
+    grenze_tage = 365 - vorlauf_tage
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT t.id, t.name,
+               COALESCE(ta.emoji, '🐄') AS emoji,
+               MAX(e.datum) AS letzte_impfung,
+               CAST(julianday('now') - julianday(MAX(e.datum)) AS INTEGER) AS tage_seit_impfung
+        FROM tiere t
+        LEFT JOIN tierarten ta ON t.tierart_id = ta.id
+        LEFT JOIN ereignisse e ON e.tier_id = t.id AND e.farm_id = t.farm_id AND e.typ = 'impfung'
+        WHERE t.farm_id = ? AND t.status = 'Aktiv'
+        GROUP BY t.id
+        HAVING MAX(e.datum) IS NULL OR julianday('now') - julianday(MAX(e.datum)) > ?
+        ORDER BY letzte_impfung ASC
+    """, (farm_id, grenze_tage)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
