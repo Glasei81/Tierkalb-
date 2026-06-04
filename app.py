@@ -1,5 +1,5 @@
 """
-app.py — Tierkalb v3.2
+app.py — Tierkalb v3.3
 """
 
 import os
@@ -44,7 +44,7 @@ def _load_secret_key() -> str:
 app.secret_key = os.environ.get("SECRET_KEY") or _load_secret_key()
 
 
-# ─── Helpers ─────────────────────────────────────────────────────────────────────
+# ─── Helpers ───────────────────────────────────────────────────────────────────────────────────
 
 def get_farm_id():
     if "farm_id" in session:
@@ -92,7 +92,7 @@ def t(key):
     return I18N.get(lang, I18N["de"]).get(key, key)
 
 
-# ─── Setup ───────────────────────────────────────────────────────────────────────
+# ─── Setup ────────────────────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -120,7 +120,7 @@ def setup():
     return render_template("setup.html", t=t, TIERARTEN=TIERARTEN)
 
 
-# ─── Dashboard ───────────────────────────────────────────────────────────────────
+# ─── Dashboard ───────────────────────────────────────────────────────────────────────────────────
 
 @app.route("/dashboard")
 @require_farm
@@ -149,7 +149,7 @@ def dashboard():
         gesamtkosten=gesamtkosten, t=t)
 
 
-# ─── Tier CRUD ───────────────────────────────────────────────────────────────────
+# ─── Tier CRUD ───────────────────────────────────────────────────────────────────────────────────
 
 @app.route("/tier/neu", methods=["GET", "POST"])
 @require_farm
@@ -186,6 +186,10 @@ def tier_detail(tier_id):
     kosten = db.get_kosten_fuer_tier(tier_id, fid)
     kosten_gesamt = sum(k["betrag"] for k in kosten)
 
+    besamungen_count = sum(1 for e in ereignisse if e["typ"] == "besamung")
+    geburten_count = sum(1 for e in ereignisse if e["typ"] == "geburt")
+    besamungskosten = sum(k["betrag"] for k in kosten if k["typ"] == "Besamung")
+
     erwartete_geburt = None
     lb = db.get_letztes_ereignis(tier_id, fid, "besamung")
     if lb and tier.get("tragzeit"):
@@ -201,6 +205,9 @@ def tier_detail(tier_id):
     return render_template("tier_detail.html",
         tier=tier, ereignisse=ereignisse, kosten=kosten,
         kosten_gesamt=kosten_gesamt,
+        besamungen_count=besamungen_count,
+        geburten_count=geburten_count,
+        besamungskosten=besamungskosten,
         erwartete_geburt=erwartete_geburt,
         naechste_brunft=naechste_brunft,
         t=t, KOSTEN_TYPEN=KOSTEN_TYPEN, EREIGNIS_TYPEN=EREIGNIS_TYPEN)
@@ -241,7 +248,7 @@ def tier_archivieren(tier_id):
     return redirect(url_for("dashboard"))
 
 
-# ─── Ereignisse ──────────────────────────────────────────────────────────────────
+# ─── Ereignisse ────────────────────────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/ereignis/neu", methods=["GET", "POST"])
 @require_farm
@@ -283,7 +290,7 @@ def ereignis_loeschen(tier_id, ereignis_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Kosten ─────────────────────────────────────────────────────────────────────
+# ─── Kosten ─────────────────────────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/kosten/neu", methods=["GET", "POST"])
 @require_farm
@@ -307,7 +314,6 @@ def kosten_neu(tier_id):
             kosten_datum,
             kosten_notiz,
         )
-        # Automatisch auch als Ereignis eintragen (außer Futter & Medikamente)
         ereignis_typ = _KOSTEN_EREIGNIS_MAP.get(kosten_typ)
         if ereignis_typ:
             db.add_ereignis(fid, tier_id, ereignis_typ, kosten_datum, kosten_notiz)
@@ -329,7 +335,7 @@ def kosten_loeschen(tier_id, kosten_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Statistik ───────────────────────────────────────────────────────────────────
+# ─── Statistik ───────────────────────────────────────────────────────────────────────────────────
 
 @app.route("/statistik")
 @require_farm
@@ -341,11 +347,12 @@ def statistik():
         kosten_pro_tierart=db.get_kosten_pro_tierart(fid),
         kosten_pro_monat=db.get_kosten_pro_monat(fid, monate=12),
         besamungs_stats=db.get_besamungs_statistik(fid),
+        kosten_pro_geburt=db.get_kosten_pro_geburt(fid),
         gesamtkosten=db.get_gesamtkosten(fid),
         t=t)
 
 
-# ─── Export ─────────────────────────────────────────────────────────────────────
+# ─── Export ─────────────────────────────────────────────────────────────────────────────────────
 
 @app.route("/export/csv")
 @require_farm
@@ -489,7 +496,7 @@ def export_pdf():
                      as_attachment=True, download_name=filename)
 
 
-# ─── Spenden ─────────────────────────────────────────────────────────────────────
+# ─── Spenden ────────────────────────────────────────────────────────────────────────────────────
 
 @app.route("/spenden")
 @require_farm
@@ -499,7 +506,7 @@ def spenden():
     return render_template("spenden.html", tier_count=tier_count, t=t)
 
 
-# ─── Einstellungen ───────────────────────────────────────────────────────────────
+# ─── Einstellungen ──────────────────────────────────────────────────────────────────────────────────
 
 @app.route("/einstellungen", methods=["GET", "POST"])
 @require_farm
@@ -522,7 +529,7 @@ def einstellungen():
         t=t)
 
 
-# ─── Telegram Test ─────────────────────────────────────────────────────────────
+# ─── Telegram Test ─────────────────────────────────────────────────────────────────────────────
 
 @app.route("/telegram/test", methods=["POST"])
 @require_farm
@@ -540,7 +547,7 @@ def telegram_test():
     return redirect(url_for("einstellungen"))
 
 
-# ─── Error Handler ─────────────────────────────────────────────────────────────
+# ─── Error Handler ─────────────────────────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
 def not_found(e):
