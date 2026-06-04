@@ -1,5 +1,5 @@
 """
-app.py — Tierkalb v3.2
+app.py — Tierkalb v3.3
 """
 
 import os
@@ -18,7 +18,6 @@ from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN
 
 app = Flask(__name__)
 
-# Kosteneintrag aus Ereignis und umgekehrt
 _EREIGNIS_KOSTEN_MAP = {
     "besamung":  "Besamung",
     "impfung":   "Impfung",
@@ -43,8 +42,6 @@ def _load_secret_key() -> str:
 
 app.secret_key = os.environ.get("SECRET_KEY") or _load_secret_key()
 
-
-# ─── Helpers ─────────────────────────────────────────────────────────────────────
 
 def get_farm_id():
     if "farm_id" in session:
@@ -92,8 +89,6 @@ def t(key):
     return I18N.get(lang, I18N["de"]).get(key, key)
 
 
-# ─── Setup ───────────────────────────────────────────────────────────────────────
-
 @app.route("/")
 def index():
     fid = get_farm_id()
@@ -119,8 +114,6 @@ def setup():
         return redirect(url_for("dashboard"))
     return render_template("setup.html", t=t, TIERARTEN=TIERARTEN)
 
-
-# ─── Dashboard ───────────────────────────────────────────────────────────────────
 
 @app.route("/dashboard")
 @require_farm
@@ -148,8 +141,6 @@ def dashboard():
         upcoming=upcoming, tier_count=tier_count,
         gesamtkosten=gesamtkosten, t=t)
 
-
-# ─── Tier CRUD ───────────────────────────────────────────────────────────────────
 
 @app.route("/tier/neu", methods=["GET", "POST"])
 @require_farm
@@ -186,6 +177,10 @@ def tier_detail(tier_id):
     kosten = db.get_kosten_fuer_tier(tier_id, fid)
     kosten_gesamt = sum(k["betrag"] for k in kosten)
 
+    besamungen_count = sum(1 for e in ereignisse if e["typ"] == "besamung")
+    geburten_count   = sum(1 for e in ereignisse if e["typ"] == "geburt")
+    besamungskosten  = sum(k["betrag"] for k in kosten if k["typ"] == "Besamung")
+
     erwartete_geburt = None
     lb = db.get_letztes_ereignis(tier_id, fid, "besamung")
     if lb and tier.get("tragzeit"):
@@ -201,6 +196,9 @@ def tier_detail(tier_id):
     return render_template("tier_detail.html",
         tier=tier, ereignisse=ereignisse, kosten=kosten,
         kosten_gesamt=kosten_gesamt,
+        besamungen_count=besamungen_count,
+        geburten_count=geburten_count,
+        besamungskosten=besamungskosten,
         erwartete_geburt=erwartete_geburt,
         naechste_brunft=naechste_brunft,
         t=t, KOSTEN_TYPEN=KOSTEN_TYPEN, EREIGNIS_TYPEN=EREIGNIS_TYPEN)
@@ -240,8 +238,6 @@ def tier_archivieren(tier_id):
         flash(f"{tier['name']} wurde archiviert.", "info")
     return redirect(url_for("dashboard"))
 
-
-# ─── Ereignisse ──────────────────────────────────────────────────────────────────
 
 @app.route("/tier/<int:tier_id>/ereignis/neu", methods=["GET", "POST"])
 @require_farm
@@ -283,8 +279,6 @@ def ereignis_loeschen(tier_id, ereignis_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Kosten ─────────────────────────────────────────────────────────────────────
-
 @app.route("/tier/<int:tier_id>/kosten/neu", methods=["GET", "POST"])
 @require_farm
 def kosten_neu(tier_id):
@@ -297,17 +291,10 @@ def kosten_neu(tier_id):
             betrag = float(request.form.get("betrag", "0").replace(",", "."))
         except ValueError:
             betrag = 0.0
-        kosten_typ = request.form.get("typ", "Sonstiges")
+        kosten_typ   = request.form.get("typ", "Sonstiges")
         kosten_datum = request.form.get("datum", date.today().isoformat())
         kosten_notiz = request.form.get("notiz", "").strip()
-        db.add_kosten(
-            fid, tier_id,
-            kosten_typ,
-            betrag,
-            kosten_datum,
-            kosten_notiz,
-        )
-        # Automatisch auch als Ereignis eintragen (außer Futter & Medikamente)
+        db.add_kosten(fid, tier_id, kosten_typ, betrag, kosten_datum, kosten_notiz)
         ereignis_typ = _KOSTEN_EREIGNIS_MAP.get(kosten_typ)
         if ereignis_typ:
             db.add_ereignis(fid, tier_id, ereignis_typ, kosten_datum, kosten_notiz)
@@ -329,8 +316,6 @@ def kosten_loeschen(tier_id, kosten_id):
     return redirect(url_for("tier_detail", tier_id=tier_id))
 
 
-# ─── Statistik ───────────────────────────────────────────────────────────────────
-
 @app.route("/statistik")
 @require_farm
 def statistik():
@@ -341,11 +326,10 @@ def statistik():
         kosten_pro_tierart=db.get_kosten_pro_tierart(fid),
         kosten_pro_monat=db.get_kosten_pro_monat(fid, monate=12),
         besamungs_stats=db.get_besamungs_statistik(fid),
+        kosten_pro_geburt=db.get_kosten_pro_geburt(fid),
         gesamtkosten=db.get_gesamtkosten(fid),
         t=t)
 
-
-# ─── Export ─────────────────────────────────────────────────────────────────────
 
 @app.route("/export/csv")
 @require_farm
@@ -353,7 +337,6 @@ def export_csv():
     fid = get_farm_id()
     farm = db.get_farm(fid)
     tiere = db.get_alle_tiere(fid, nur_aktiv=False)
-
     out = StringIO()
     w = csv.writer(out, delimiter=";")
     w.writerow(["=== TIERE ==="])
@@ -361,8 +344,7 @@ def export_csv():
     for tier in tiere:
         w.writerow([tier["name"], tier["ohrmarke"] or "",
                     tier["tierart_name"] or "", tier["geburtsdatum"] or "",
-                    tier.get("geschlecht") or "", tier["status"],
-                    tier.get("notiz") or ""])
+                    tier.get("geschlecht") or "", tier["status"], tier.get("notiz") or ""])
     w.writerow([])
     w.writerow(["=== EREIGNISSE ==="])
     w.writerow(["Tier", "Typ", "Datum", "Notiz"])
@@ -375,11 +357,9 @@ def export_csv():
     gesamt = 0.0
     for tier in tiere:
         for k in db.get_kosten_fuer_tier(tier["id"], fid):
-            w.writerow([tier["name"], k["typ"],
-                        f"{k['betrag']:.2f}", k["datum"], k["notiz"] or ""])
+            w.writerow([tier["name"], k["typ"], f"{k['betrag']:.2f}", k["datum"], k["notiz"] or ""])
             gesamt += k["betrag"]
     w.writerow(["", "GESAMT", f"{gesamt:.2f}", "", ""])
-
     bio = BytesIO()
     bio.write(b"\xef\xbb\xbf")
     bio.write(out.getvalue().encode("utf-8"))
@@ -394,64 +374,44 @@ def export_pdf():
     fid = get_farm_id()
     farm = db.get_farm(fid)
     tiere = db.get_alle_tiere(fid, nur_aktiv=False)
-
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import cm
     from reportlab.lib import colors
-    from reportlab.platypus import (
-        SimpleDocTemplate, Table, TableStyle,
-        Paragraph, Spacer, HRFlowable
-    )
-
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
     bio = BytesIO()
-    doc = SimpleDocTemplate(bio, pagesize=A4,
-                            rightMargin=2*cm, leftMargin=2*cm,
-                            topMargin=2*cm, bottomMargin=2*cm)
+    doc = SimpleDocTemplate(bio, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
     styles = getSampleStyleSheet()
     GREEN = colors.HexColor("#2e7d32")
     BLUE  = colors.HexColor("#1565c0")
     LGREY = colors.HexColor("#f5f5f5")
-
     h1 = ParagraphStyle("h1", parent=styles["Title"], fontSize=18, spaceAfter=4)
-    h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontSize=12,
-                        spaceBefore=10, spaceAfter=4, textColor=GREEN)
-    h3 = ParagraphStyle("h3", parent=styles["Heading3"], fontSize=10,
-                        spaceBefore=6, spaceAfter=2)
+    h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontSize=12, spaceBefore=10, spaceAfter=4, textColor=GREEN)
+    h3 = ParagraphStyle("h3", parent=styles["Heading3"], fontSize=10, spaceBefore=6, spaceAfter=2)
     normal = styles["Normal"]
-
     def make_table(data, col_widths, header_color):
         tbl = Table(data, colWidths=col_widths)
         tbl.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), header_color),
-            ("TEXTCOLOR",  (0, 0), (-1, 0), colors.white),
-            ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE",   (0, 0), (-1, -1), 8),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, LGREY]),
-            ("GRID", (0, 0), (-1, -1), 0.4, colors.lightgrey),
-            ("LEFTPADDING",   (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING",  (0, 0), (-1, -1), 4),
-            ("TOPPADDING",    (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("BACKGROUND", (0,0), (-1,0), header_color), ("TEXTCOLOR", (0,0), (-1,0), colors.white),
+            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"), ("FONTSIZE", (0,0), (-1,-1), 8),
+            ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, LGREY]),
+            ("GRID", (0,0), (-1,-1), 0.4, colors.lightgrey),
+            ("LEFTPADDING", (0,0), (-1,-1), 4), ("RIGHTPADDING", (0,0), (-1,-1), 4),
+            ("TOPPADDING", (0,0), (-1,-1), 3), ("BOTTOMPADDING", (0,0), (-1,-1), 3),
         ]))
         return tbl
-
     story = []
     story.append(Paragraph(f"Tierkalb — {farm['name']}", h1))
     story.append(Paragraph(f"Bericht vom {date.today().strftime('%d.%m.%Y')}", normal))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.grey))
     story.append(Spacer(1, 0.4*cm))
-
     story.append(Paragraph("Tiere", h2))
     data = [["Name", "Ohrmarke", "Tierart", "Geburtsdatum", "Status"]]
     for tier in tiere:
         emoji = tier.get("emoji") or ""
-        data.append([tier["name"], tier["ohrmarke"] or "–",
-                     f"{emoji} {tier['tierart_name'] or '–'}",
-                     tier["geburtsdatum"] or "–", tier["status"]])
+        data.append([tier["name"], tier["ohrmarke"] or "–", f"{emoji} {tier['tierart_name'] or '–'}", tier["geburtsdatum"] or "–", tier["status"]])
     story.append(make_table(data, [4*cm, 3*cm, 4*cm, 3*cm, 3*cm], GREEN))
     story.append(Spacer(1, 0.4*cm))
-
     story.append(Paragraph("Kosten-Übersicht", h2))
     kpt = db.get_kosten_pro_tier(fid)
     gesamt = db.get_gesamtkosten(fid)
@@ -461,15 +421,11 @@ def export_pdf():
     if kpt:
         kdata.append(["GESAMT", f"{gesamt:.2f}"])
         tbl = make_table(kdata, [12*cm, 5*cm], BLUE)
-        tbl.setStyle(TableStyle([
-            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#e3f2fd")),
-        ]))
+        tbl.setStyle(TableStyle([("FONTNAME", (0,-1), (-1,-1), "Helvetica-Bold"), ("BACKGROUND", (0,-1), (-1,-1), colors.HexColor("#e3f2fd"))]))
         story.append(tbl)
     else:
         story.append(Paragraph("Noch keine Kosten eingetragen.", normal))
     story.append(Spacer(1, 0.4*cm))
-
     story.append(Paragraph("Ereignisse", h2))
     for tier in tiere:
         ereignisse = db.get_ereignisse_fuer_tier(tier["id"], fid)
@@ -478,18 +434,13 @@ def export_pdf():
             edata = [["Typ", "Datum", "Notiz"]]
             for e in ereignisse:
                 edata.append([e["typ"].capitalize(), e["datum"], e["notiz"] or ""])
-            story.append(make_table(edata, [3.5*cm, 3*cm, 10.5*cm],
-                                    colors.HexColor("#4a148c")))
+            story.append(make_table(edata, [3.5*cm, 3*cm, 10.5*cm], colors.HexColor("#4a148c")))
             story.append(Spacer(1, 0.2*cm))
-
     doc.build(story)
     bio.seek(0)
     filename = f"tierkalb_{farm['name']}_{date.today().isoformat()}.pdf"
-    return send_file(bio, mimetype="application/pdf",
-                     as_attachment=True, download_name=filename)
+    return send_file(bio, mimetype="application/pdf", as_attachment=True, download_name=filename)
 
-
-# ─── Spenden ─────────────────────────────────────────────────────────────────────
 
 @app.route("/spenden")
 @require_farm
@@ -499,8 +450,6 @@ def spenden():
     return render_template("spenden.html", tier_count=tier_count, t=t)
 
 
-# ─── Einstellungen ───────────────────────────────────────────────────────────────
-
 @app.route("/einstellungen", methods=["GET", "POST"])
 @require_farm
 def einstellungen():
@@ -508,10 +457,8 @@ def einstellungen():
     farm = db.get_farm(fid)
     if request.method == "POST":
         db.set_config(fid, "lang", request.form.get("lang", "de"))
-        db.set_config(fid, "telegram_token",
-                      request.form.get("telegram_token", "").strip())
-        db.set_config(fid, "telegram_chat_id",
-                      request.form.get("telegram_chat_id", "").strip())
+        db.set_config(fid, "telegram_token", request.form.get("telegram_token", "").strip())
+        db.set_config(fid, "telegram_chat_id", request.form.get("telegram_chat_id", "").strip())
         flash("Einstellungen gespeichert.", "success")
         return redirect(url_for("einstellungen"))
     return render_template("einstellungen.html",
@@ -521,8 +468,6 @@ def einstellungen():
         telegram_chat_id=db.get_config(fid, "telegram_chat_id", ""),
         t=t)
 
-
-# ─── Telegram Test ─────────────────────────────────────────────────────────────
 
 @app.route("/telegram/test", methods=["POST"])
 @require_farm
@@ -539,8 +484,6 @@ def telegram_test():
           "success" if ok else "error")
     return redirect(url_for("einstellungen"))
 
-
-# ─── Error Handler ─────────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
 def not_found(e):

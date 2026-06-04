@@ -5,12 +5,8 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h4 class="fw-bold mb-0"><i class="bi bi-bar-chart"></i> Statistik & Auswertung</h4>
   <div class="d-flex gap-2">
-    <a href="/export/csv" class="btn btn-sm btn-outline-success">
-      <i class="bi bi-file-earmark-spreadsheet"></i> CSV
-    </a>
-    <a href="/export/pdf" class="btn btn-sm btn-outline-danger">
-      <i class="bi bi-file-earmark-pdf"></i> PDF
-    </a>
+    <a href="/export/csv" class="btn btn-sm btn-outline-success"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</a>
+    <a href="/export/pdf" class="btn btn-sm btn-outline-danger"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
   </div>
 </div>
 
@@ -28,59 +24,34 @@
 </div>
 
 <div class="row g-4">
-
   {% if kosten_pro_tier %}
   <div class="col-md-6">
-    <div class="card p-3">
-      <h6 class="fw-bold mb-3"><i class="bi bi-person"></i> Kosten pro Tier</h6>
-      <canvas id="chartTier" height="220"></canvas>
-    </div>
+    <div class="card p-3"><h6 class="fw-bold mb-3"><i class="bi bi-person"></i> Kosten pro Tier</h6><canvas id="chartTier" height="220"></canvas></div>
   </div>
   {% endif %}
-
   {% if kosten_pro_typ %}
   <div class="col-md-6">
-    <div class="card p-3">
-      <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart"></i> Kosten nach Art</h6>
-      <canvas id="chartTyp" height="220"></canvas>
-    </div>
+    <div class="card p-3"><h6 class="fw-bold mb-3"><i class="bi bi-pie-chart"></i> Kosten nach Art</h6><canvas id="chartTyp" height="220"></canvas></div>
   </div>
   {% endif %}
-
   {% if kosten_pro_tierart %}
   <div class="col-md-6">
-    <div class="card p-3">
-      <h6 class="fw-bold mb-3"><i class="bi bi-tag"></i> Kosten nach Tierart</h6>
-      <canvas id="chartTierart" height="220"></canvas>
-    </div>
+    <div class="card p-3"><h6 class="fw-bold mb-3"><i class="bi bi-tag"></i> Kosten nach Tierart</h6><canvas id="chartTierart" height="220"></canvas></div>
   </div>
   {% endif %}
-
   {% if kosten_pro_monat %}
   <div class="col-{% if kosten_pro_tierart %}md-6{% else %}12{% endif %}">
-    <div class="card p-3">
-      <h6 class="fw-bold mb-3"><i class="bi bi-graph-up"></i> Monatsverlauf (letzte 12 Monate)</h6>
-      <canvas id="chartMonat" height="{% if kosten_pro_tierart %}220{% else %}120{% endif %}"></canvas>
-    </div>
+    <div class="card p-3"><h6 class="fw-bold mb-3"><i class="bi bi-graph-up"></i> Monatsverlauf (letzte 12 Monate)</h6><canvas id="chartMonat" height="{% if kosten_pro_tierart %}220{% else %}120{% endif %}"></canvas></div>
   </div>
   {% endif %}
 
   {% if besamungs_stats %}
   <div class="col-12">
     <div class="card">
-      <div class="card-header green">
-        <strong><i class="bi bi-table"></i> Trächtigkeits-Auswertung</strong>
-      </div>
+      <div class="card-header green"><strong><i class="bi bi-table"></i> Trächtigkeits-Auswertung</strong></div>
       <div class="table-responsive">
         <table class="table table-hover mb-0">
-          <thead>
-            <tr>
-              <th>Tier</th>
-              <th class="text-center">Besamungen</th>
-              <th class="text-center">Geburten</th>
-              <th class="text-center">Erfolgsrate</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Tier</th><th class="text-center">Besamungen</th><th class="text-center">Geburten</th><th class="text-center">Erfolgsrate</th></tr></thead>
           <tbody>
           {% for s in besamungs_stats %}
           <tr>
@@ -89,10 +60,7 @@
             <td class="text-center">{{ s.geburten }}</td>
             <td class="text-center">
               <div class="progress" style="height:20px; min-width:80px">
-                <div class="progress-bar {{ 'bg-success' if s.erfolgsrate >= 70 else 'bg-warning text-dark' if s.erfolgsrate >= 40 else 'bg-danger' }}"
-                     style="width: {{ s.erfolgsrate }}%">
-                  {{ s.erfolgsrate }}%
-                </div>
+                <div class="progress-bar {{ 'bg-success' if s.erfolgsrate >= 70 else 'bg-warning text-dark' if s.erfolgsrate >= 40 else 'bg-danger' }}" style="width: {{ s.erfolgsrate }}%">{{ s.erfolgsrate }}%</div>
               </div>
             </td>
           </tr>
@@ -104,6 +72,31 @@
   </div>
   {% endif %}
 
+  {% if kosten_pro_geburt %}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header" style="background:#1565c0;color:white"><strong><i class="bi bi-currency-euro"></i> Kosten pro Geburt</strong></div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Tier</th><th class="text-center">Besamungen</th><th class="text-center">Geburten</th><th class="text-end">Besamungskosten</th><th class="text-end">Ø Kosten/Geburt</th></tr></thead>
+          <tbody>
+          {% for r in kosten_pro_geburt %}
+          <tr>
+            <td><a href="/tier/{{ r.tier_id }}">{{ r.emoji }} {{ r.tier_name }}</a></td>
+            <td class="text-center">{{ r.besamungen }}</td>
+            <td class="text-center">{{ r.geburten }}</td>
+            <td class="text-end">{{ "%.2f"|format(r.besamungskosten) }} €</td>
+            <td class="text-end fw-bold {{ 'text-success' if r.kosten_pro_geburt else 'text-muted' }}">
+              {% if r.kosten_pro_geburt %}{{ "%.2f"|format(r.kosten_pro_geburt) }} €{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}
@@ -111,74 +104,22 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const COLORS = [
-  '#2e7d32','#1565c0','#6a1b9a','#e65100','#ad1457',
-  '#00838f','#558b2f','#4527a0','#4e342e','#37474f'
-];
-
+const COLORS = ['#2e7d32','#1565c0','#6a1b9a','#e65100','#ad1457','#00838f','#558b2f','#4527a0','#4e342e','#37474f'];
 {% if kosten_pro_tier %}
 const tierData = {{ kosten_pro_tier | tojson }};
-if (tierData.length) {
-  new Chart(document.getElementById('chartTier'), {
-    type: 'bar',
-    data: {
-      labels: tierData.map(d => d.name),
-      datasets: [{ label: 'EUR', data: tierData.map(d => d.gesamt),
-        backgroundColor: COLORS, borderRadius: 4 }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } } }
-  });
-}
+if (tierData.length) { new Chart(document.getElementById('chartTier'), { type: 'bar', data: { labels: tierData.map(d => d.name), datasets: [{ label: 'EUR', data: tierData.map(d => d.gesamt), backgroundColor: COLORS, borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } }); }
 {% endif %}
-
 {% if kosten_pro_typ %}
 const typData = {{ kosten_pro_typ | tojson }};
-if (typData.length) {
-  new Chart(document.getElementById('chartTyp'), {
-    type: 'doughnut',
-    data: {
-      labels: typData.map(d => d.typ),
-      datasets: [{ data: typData.map(d => d.gesamt), backgroundColor: COLORS }]
-    },
-    options: { responsive: true,
-      plugins: { legend: { position: 'right' },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.toFixed(2)} EUR` } } } }
-  });
-}
+if (typData.length) { new Chart(document.getElementById('chartTyp'), { type: 'doughnut', data: { labels: typData.map(d => d.typ), datasets: [{ data: typData.map(d => d.gesamt), backgroundColor: COLORS }] }, options: { responsive: true, plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.toFixed(2)} EUR` } } } } }); }
 {% endif %}
-
 {% if kosten_pro_tierart %}
 const tierartData = {{ kosten_pro_tierart | tojson }};
-if (tierartData.length) {
-  new Chart(document.getElementById('chartTierart'), {
-    type: 'bar',
-    data: {
-      labels: tierartData.map(d => d.emoji + ' ' + d.tierart_name),
-      datasets: [{ label: 'EUR', data: tierartData.map(d => d.gesamt),
-        backgroundColor: COLORS, borderRadius: 4 }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } } }
-  });
-}
+if (tierartData.length) { new Chart(document.getElementById('chartTierart'), { type: 'bar', data: { labels: tierartData.map(d => d.emoji + ' ' + d.tierart_name), datasets: [{ label: 'EUR', data: tierartData.map(d => d.gesamt), backgroundColor: COLORS, borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } }); }
 {% endif %}
-
 {% if kosten_pro_monat %}
 const monatData = {{ kosten_pro_monat | tojson }};
-if (monatData.length) {
-  new Chart(document.getElementById('chartMonat'), {
-    type: 'line',
-    data: {
-      labels: monatData.map(d => d.label),
-      datasets: [{ label: 'Kosten (EUR)', data: monatData.map(d => d.gesamt),
-        borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.1)',
-        fill: true, tension: 0.3, pointRadius: 4 }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } } }
-  });
-}
+if (monatData.length) { new Chart(document.getElementById('chartMonat'), { type: 'line', data: { labels: monatData.map(d => d.label), datasets: [{ label: 'Kosten (EUR)', data: monatData.map(d => d.gesamt), borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.1)', fill: true, tension: 0.3, pointRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } }); }
 {% endif %}
 </script>
 {% endblock %}
