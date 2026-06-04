@@ -477,10 +477,10 @@ def polling_worker(app):
 def start_scheduler(app):
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
-        scheduler = BackgroundScheduler()
+        scheduler = BackgroundScheduler(timezone="Europe/Berlin")
         scheduler.add_job(send_daily_update, "cron", hour=6, minute=0, args=[app], id="daily_update", replace_existing=True)
         scheduler.start()
-        print("[Telegram] Scheduler gestartet (täglich 6:00 Uhr)")
+        print("[Telegram] Scheduler gestartet (täglich 6:00 Uhr Europe/Berlin)")
         t = threading.Thread(target=polling_worker, args=(app,), daemon=True)
         t.start()
         print("[Telegram] Polling-Thread gestartet")
