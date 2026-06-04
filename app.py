@@ -124,8 +124,12 @@ def dashboard():
     upcoming = db.get_upcoming_geburten(fid, days=30)
     tier_count = db.get_tier_count(fid)
     gesamtkosten = db.get_gesamtkosten(fid)
+    impfungen_faellig = db.get_faellige_impfungen(fid)
+    heute = date.today()
 
     tiere_mit_info = []
+    brunft_faellig = []
+
     for tier in tiere:
         info = dict(tier)
         lb = db.get_letztes_ereignis(tier["id"], fid, "besamung")
@@ -133,13 +137,42 @@ def dashboard():
             d = date.fromisoformat(lb["datum"])
             eb = d + timedelta(days=tier["tragzeit"])
             info["erwartete_geburt"] = eb.strftime("%d.%m.%Y")
-            info["geburt_bald"] = (eb - date.today()).days <= 14
+            info["geburt_bald"] = (eb - heute).days <= 14
         tiere_mit_info.append(info)
+
+        # Brunft-Warnung: nur weibliche Tiere mit bekanntem Zyklus
+        if tier.get("geschlecht") == "männlich" or not tier.get("brunft_zyklus"):
+            continue
+
+        # Trächtige ausschließen
+        lg = db.get_letztes_ereignis(tier["id"], fid, "geburt")
+        if lb:
+            bes_d = date.fromisoformat(lb["datum"])
+            traechtig = (not lg) or date.fromisoformat(lg["datum"]) < bes_d
+            if traechtig:
+                continue
+
+        lbr = db.get_letztes_ereignis(tier["id"], fid, "brunft")
+        if not lbr:
+            continue
+
+        lbr_d = date.fromisoformat(lbr["datum"])
+        naechste = lbr_d + timedelta(days=tier["brunft_zyklus"])
+        tage = (naechste - heute).days
+        if tage <= 7:
+            brunft_faellig.append({
+                "tier": tier,
+                "naechste_brunft": naechste.strftime("%d.%m.%Y"),
+                "tage": tage,
+            })
 
     return render_template("dashboard.html",
         farm=farm, tiere=tiere_mit_info,
         upcoming=upcoming, tier_count=tier_count,
-        gesamtkosten=gesamtkosten, t=t)
+        gesamtkosten=gesamtkosten,
+        brunft_faellig=brunft_faellig,
+        impfungen_faellig=impfungen_faellig,
+        t=t)
 
 
 @app.route("/tier/neu", methods=["GET", "POST"])

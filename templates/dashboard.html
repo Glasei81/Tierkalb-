@@ -50,11 +50,11 @@
 </div>
 
 {% if upcoming %}
-<div class="alert alert-warning border-0 mb-4">
+<div class="alert alert-warning border-0 mb-3">
   <strong><i class="bi bi-calendar-heart"></i> Bald erwartet (nächste 30 Tage):</strong>
   <div class="mt-2 d-flex flex-wrap gap-2">
   {% for u in upcoming %}
-    <span class="badge fs-6 px-3 py-2
+    <a href="/tier/{{ u.id }}" class="badge fs-6 px-3 py-2 text-decoration-none
       {{ 'bg-danger' if u.tage_bis_geburt <= 3 else
          'bg-warning text-dark' if u.tage_bis_geburt <= 7 else
          'bg-success' }}">
@@ -65,7 +65,46 @@
       {% else %}in {{ u.tage_bis_geburt }} Tagen
       {% endif %}
       ({{ u.erwartete_geburt_fmt }})
-    </span>
+    </a>
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if brunft_faellig %}
+<div class="alert border-0 mb-3" style="background:#fff3e0">
+  <strong>🌸 Brunft / Besamer bestellen:</strong>
+  <div class="mt-2 d-flex flex-wrap gap-2">
+  {% for b in brunft_faellig %}
+    <a href="/tier/{{ b.tier.id }}" class="badge fs-6 px-3 py-2 text-decoration-none
+      {{ 'bg-danger' if b.tage <= 0 else
+         'bg-warning text-dark' if b.tage <= 3 else
+         'text-dark' }}" style="{% if b.tage > 3 %}background:#ffcc02{% endif %}">
+      {{ b.tier.emoji or '🐄' }} {{ b.tier.name }}
+      &mdash;
+      {% if b.tage <= 0 %}jetzt stierig!
+      {% elif b.tage == 1 %}morgen ({{ b.naechste_brunft }})
+      {% else %}in {{ b.tage }} Tagen ({{ b.naechste_brunft }})
+      {% endif %}
+    </a>
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if impfungen_faellig %}
+<div class="alert border-0 mb-3" style="background:#e8f5e9">
+  <strong>💊 Impfung fällig:</strong>
+  <div class="mt-2 d-flex flex-wrap gap-2">
+  {% for imp in impfungen_faellig %}
+    <a href="/tier/{{ imp.id }}" class="badge fs-6 px-3 py-2 bg-success text-decoration-none">
+      {{ imp.emoji or '🐄' }} {{ imp.name }}
+      {% if imp.letzte_impfung %}
+        &mdash; vor {{ imp.tage_seit_impfung }} Tagen
+      {% else %}
+        &mdash; nie geimpft
+      {% endif %}
+    </a>
   {% endfor %}
   </div>
 </div>
