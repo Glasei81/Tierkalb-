@@ -1,4 +1,4 @@
-# Tierart-Konfigurationen für Tierkalb v3.3
+# Tierart-Konfigurationen für HerdenPilot v3.3
 
 TIERARTEN = {
     "Rinder":   {"brunft": 21,   "tragzeit": 280, "tk_tage": 28, "label": "Kalben",      "emoji": "🐄"},
@@ -27,7 +27,7 @@ EREIGNIS_TYPEN = [
 
 I18N = {
     "de": {
-        "willkommen":      "Willkommen zu Tierkalb",
+        "willkommen":      "Willkommen bei HerdenPilot",
         "dashboard":       "Dashboard",
         "statistik":       "Statistik",
         "einstellungen":   "Einstellungen",
@@ -51,7 +51,7 @@ I18N = {
         "keine_daten":     "Noch keine Daten vorhanden",
     },
     "en": {
-        "willkommen":      "Welcome to Tierkalb",
+        "willkommen":      "Welcome to HerdenPilot",
         "dashboard":       "Dashboard",
         "statistik":       "Statistics",
         "einstellungen":   "Settings",

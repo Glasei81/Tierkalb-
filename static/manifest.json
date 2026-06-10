@@ -1,7 +1,7 @@
 {
-  "name": "Tierkalb",
-  "short_name": "Tierkalb",
-  "description": "Farm-Management für Landwirte",
+  "name": "HerdenPilot",
+  "short_name": "HerdenPilot",
+  "description": "Professionelles Herdenmanagement — ohne teure Lizenzen",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
