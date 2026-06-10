@@ -1,4 +1,4 @@
-# Tierkalb — Installation auf Windows
+# HerdenPilot — Installation auf Windows
 
 Diese Anleitung führt dich Schritt für Schritt durch die Installation auf einem Windows-PC.
 Keine Vorkenntnisse nötig.
@@ -38,6 +38,7 @@ Docker sorgt dafür, dass die App läuft — ohne Python oder andere Programme m
 
 ```bash
 git clone https://github.com/Glasei81/Tierkalb-.git
+cd Tierkalb-
 ```
 
 Es wird ein Ordner `Tierkalb-` erstellt — entweder auf dem Desktop oder im Benutzer-Ordner (`C:\Users\DeinName\Tierkalb-`).
@@ -46,13 +47,7 @@ Es wird ein Ordner `Tierkalb-` erstellt — entweder auf dem Desktop oder im Ben
 
 ## Schritt 4 — App starten
 
-1. Im Git-Bash-Fenster in den neuen Ordner wechseln:
-
-```bash
-cd Tierkalb-
-```
-
-2. App starten:
+1. App starten:
 
 ```bash
 docker compose up -d
@@ -60,7 +55,7 @@ docker compose up -d
 
 Das dauert beim ersten Mal 1–2 Minuten, weil Docker die App einrichtet.
 
-3. Wenn keine Fehlermeldung erscheint: Browser öffnen und folgende Adresse eingeben:
+2. Browser öffnen und folgende Adresse eingeben:
 
 ```
 http://localhost:5000
@@ -72,7 +67,7 @@ Es erscheint der **Einrichtungs-Assistent** — Betriebsnamen eingeben, fertig.
 
 ## Schritt 5 — Tailscale einrichten (Fernzugriff)
 
-Mit Tailscale kannst du die App auch von anderen Geräten aus aufrufen — z. B. vom Handy oder einem anderen PC.
+Mit Tailscale kannst du die App auch von anderen Geräten aus aufrufen — z. B. vom Handy oder einem anderen PC.
 
 1. Geh auf [tailscale.com/download](https://tailscale.com/download)
 2. **"Download for Windows"** klicken und installieren
@@ -95,14 +90,9 @@ http://100.x.x.x:5000
 
 ## App stoppen und neu starten
 
-**Stoppen:**
 ```bash
-docker compose down
-```
-
-**Wieder starten:**
-```bash
-docker compose up -d
+docker compose down    # Stoppen
+docker compose up -d   # Starten
 ```
 
 ---
@@ -140,12 +130,12 @@ Docker Desktop ist noch nicht gestartet. Docker Desktop öffnen, warten bis das 
 
 # Alternative: Zugriff auf den Hauspi (bestehende Installation)
 
-Wenn Tierkalb bereits auf einem Raspberry Pi (Hauspi) läuft, brauchst du nichts installieren.
+Wenn HerdenPilot bereits auf einem Raspberry Pi (Hauspi) läuft, brauchst du nichts installieren.
 Du greifst einfach über Tailscale auf die laufende App zu.
 
 ### Voraussetzungen
 
-- Hauspi läuft bereits mit Tierkalb
+- Hauspi läuft bereits mit HerdenPilot
 - Tailscale ist auf dem Hauspi installiert
 - Du hast eine Einladung ins Tailscale-Netzwerk des Hauspi-Betreibers bekommen
 

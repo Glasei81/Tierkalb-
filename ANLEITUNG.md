@@ -1,4 +1,4 @@
-# Tierkalb — Bedienungsanleitung
+# HerdenPilot — Bedienungsanleitung
 
 **Für den täglichen Gebrauch am Betrieb**
 
@@ -24,7 +24,7 @@ Die App läuft im Browser — wie eine normale Webseite.
 Du brauchst **keine Installation**, kein App-Store.
 
 **Am Handy oder Computer:**
-Den Link im Browser öffnen (du hast ihn per WhatsApp o. ä. bekommen).
+Den Link im Browser öffnen (du hast ihn per WhatsApp o. ä. bekommen).
 
 **Tipp — App auf dem Handy-Startbildschirm installieren:**
 - iPhone: Safari → Teilen-Symbol → „Zum Home-Bildschirm“
@@ -38,12 +38,12 @@ Danach hast du ein Symbol wie eine echte App und kannst sie wie gewöhnt tippen.
 
 Beim allerersten Öffnen erscheint der **Einrichtungs-Assistent**.
 
-1. **Betriebsname** eingeben (z. B. „Hof Mustermann“)
+1. **Betriebsname** eingeben (z. B. „Hof Mustermann“)
 2. **Deinen Namen** eingeben (optional)
 3. **Sprache** wählen: Deutsch oder Englisch
 4. Auf **„Betrieb erstellen“** drücken
 
-Die Tierarten sind bereits voreingestellt: Rinder, Schafe, Schweine, Ziegen und Hühner.
+Die Tierarten sind bereits voreingestellt: Rinder, Schafe, Schweine und Ziegen.
 
 **Fertig** — du bist auf dem Dashboard.
 
@@ -51,16 +51,16 @@ Die Tierarten sind bereits voreingestellt: Rinder, Schafe, Schweine, Ziegen und 
 
 ## 3. Tier anlegen
 
-**So geht's:**
+**So geht’s:**
 
 1. Auf dem Dashboard oben rechts auf **„+ Neues Tier“** drücken
 2. Felder ausfüllen:
 
 | Feld | Erklärung | Pflicht? |
 |------|-----------|----------|
-| **Name** | Freiname, z. B. „Emma“ | Ja |
-| **Ohrmarke** | Amtliche Nummer, z. B. AT 123456789 | Nein |
-| **Tierart** | Rind, Schaf, Schwein, Ziege, Huhn | Empfohlen |
+| **Name** | Freiname, z. B. „Emma“ | Ja |
+| **Ohrmarke** | Amtliche Nummer, z. B. AT 123456789 | Nein |
+| **Tierart** | Rind, Schaf, Schwein, Ziege | Empfohlen |
 | **Geschlecht** | Weiblich / Männlich | Nein |
 | **Geburtsdatum** | Eigenes Geburtsdatum des Tieres | Nein |
 | **Notiz** | Interne Anmerkung | Nein |
@@ -68,7 +68,6 @@ Die Tierarten sind bereits voreingestellt: Rinder, Schafe, Schweine, Ziegen und 
 3. Auf **„Speichern“** drücken
 
 > ⚠️ **Tierart nicht vergessen!** Ohne Tierart wird kein Geburtstermin berechnet.
-> Die App warnt dich, wenn du das Feld leer lässt.
 
 Das Tier erscheint jetzt auf dem Dashboard.
 
@@ -81,7 +80,7 @@ Das Tier erscheint jetzt auf dem Dashboard.
 
 Ereignisse sind alles was mit dem Tier passiert: Brunft, Besamung, Geburt, Impfung, Tierarzt, Sonstiges.
 
-**So geht's:**
+**So geht’s:**
 
 1. Auf dem Dashboard auf den **Tiernamen** klicken
 2. Im Bereich „Ereignisse“ auf **„+ Eintragen“** drücken
@@ -106,7 +105,6 @@ Ereignisse sind alles was mit dem Tier passiert: Brunft, Besamung, Geburt, Impfu
 | 🐑 Schafe | 150 Tage |
 | 🐷 Schweine | 114 Tage |
 | 🐐 Ziegen | 150 Tage |
-| 🐔 Hühner | 21 Tage (Brutzeit) |
 
 - Nach einer **Brunft** wird die nächste Brunft vorgemerkt
 - Im Dashboard erscheint ein **Geburten-Hinweis** wenn es bald so weit ist
@@ -115,12 +113,12 @@ Ereignisse sind alles was mit dem Tier passiert: Brunft, Besamung, Geburt, Impfu
 
 ## 5. Kosten eintragen
 
-**So geht's:**
+**So geht’s:**
 
 1. Auf dem Dashboard auf den **Tiernamen** klicken
 2. Im Bereich „Kosten“ auf **„+ Eintragen“** drücken
 3. **Kostenart** auswählen: Tierarzt / Besamung / Futter / Medikamente / Impfung / Sonstiges
-4. **Betrag** eingeben (z. B. `150` oder `150,50`)
+4. **Betrag** eingeben (z. B. `150` oder `150,50`)
 5. **Datum** und optionale **Notiz** ergänzen
 6. Auf **„Speichern“** drücken
 
@@ -138,6 +136,7 @@ Oben im Menü auf **„Statistik“** klicken.
 | **Kosten nach Art** | Wofür wurde am meisten ausgegeben? |
 | **Monatsverlauf** | Kosten der letzten 12 Monate |
 | **Trächtigkeitsrate** | Wie viele Besamungen führten zur Geburt? |
+| **Kosten pro Geburt** | Was hat eine Geburt durchschnittlich gekostet? |
 
 ---
 
@@ -158,7 +157,7 @@ Mit Telegram kannst du alles Wichtige direkt vom Handy aus machen — auch wenn 
 ### Abfragen
 
 | Befehl | Was passiert |
-|--------|--------------|
+|--------|---------------|
 | `/status` | Vollständiger Überblick: Brunft, Trächtigkeit, Geburten |
 | `/tiere` | Liste aller aktiven Tiere |
 | `/hilfe` | Diese Befehlsliste |
@@ -170,8 +169,7 @@ Mit Telegram kannst du alles Wichtige direkt vom Handy aus machen — auch wenn 
 | `/neues_tier` | `/neues_tier Emma Rind` | Kuh „Emma“ anlegen |
 | `/neues_tier` | `/neues_tier Wolke Schaf` | Schaf „Wolke“ anlegen |
 
-Verfügbare Tierarten: Rind, Schaf, Schwein, Ziege, Huhn  
-Ohrmarke und Geburtsdatum kannst du danach in der App ergänzen.
+Verfügbare Tierarten: Rind, Schaf, Schwein, Ziege
 
 ### Eintragen (direkt aus dem Stall)
 
@@ -180,19 +178,15 @@ Ohrmarke und Geburtsdatum kannst du danach in der App ergänzen.
 | `/besamung` | `/besamung Emma` | Besamung heute |
 | `/besamung` | `/besamung Emma 24.05.` | Besamung mit Datum |
 | `/brunft` | `/brunft Bella` | Brunft heute |
-| `/brunft` | `/brunft Bella 20.05.` | Brunft mit Datum |
-| `/geburt` | `/geburt Lisa` | Geburt heute |
 | `/geburt` | `/geburt Lisa 18.05.` | Geburt mit Datum |
 | `/impfung` | `/impfung Anna` | Impfung heute |
 | `/tierarzt` | `/tierarzt Emma 150` | Tierarzt 150 € |
 | `/kosten` | `/kosten Emma 80` | Sonstige Kosten 80 € |
 
 **Tipps:**
-- Groß/Kleinschreibung egal: `/besamung emma` funktioniert genauso wie `/besamung Emma`
+- Groß/Kleinschreibung egal: `/besamung emma` = `/besamung Emma`
 - Abkürzung reicht: `/besamung em` findet „Emma“
-- Bei mehreren ähnlichen Namen fragt der Bot nach
-
-Täglich um **6:00 Uhr früh** kommt automatisch eine Nachricht wenn Geburten bevorstehen.
+- Täglich **6:00 Uhr**: automatische Meldung über bevorstehende Geburten, fällige TK-Kontrollen und Impfungen
 
 ---
 
@@ -207,18 +201,15 @@ Auf den Tiernamen klicken → „Bearbeiten“ → Änderungen speichern.
 **Ich habe ein Ereignis falsch eingetragen. Wie lösche ich es?**  
 Auf den Tiernamen klicken → im Bereich „Ereignisse“ beim falschen Eintrag auf das Papierkorb-Symbol.
 
-**Die App öffnet das Setup obwohl ich schon eingerichtet habe.**  
-Das passiert beim ersten Öffnen auf einem neuen Gerät oder Browser. Einfach den Link öffnen, den dir der Betreiber geschickt hat — nach dem ersten Besuch merkt sich der Browser den Betrieb dauerhaft.
-
 **Die Geburtstermin-Berechnung stimmt nicht.**  
 Prüfe ob die richtige **Tierart** beim Tier eingestellt ist (Tier anklicken → Bearbeiten). Ohne Tierart gibt es keinen Geburtstermin.
 
 **Der Telegram-Bot antwortet nicht.**  
-Token und Chat-ID in der App unter **Menü → Einstellungen** prüfen. Den „Testnachricht senden“-Button verwenden — der zeigt sofort ob die Verbindung klappt.
+Token und Chat-ID in der App unter **Menü → Einstellungen** prüfen. Den „Testnachricht senden“-Button verwenden.
 
 **Ich möchte alle Daten sichern.**  
 Oben im Menü auf **Export → CSV** klicken und die Datei speichern.
 
 ---
 
-*Tierkalb — gemacht für den Betrieb, nicht für den Computer.*
+*HerdenPilot — gemacht für den Betrieb, nicht für den Computer.*

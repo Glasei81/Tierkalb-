@@ -1,5 +1,5 @@
 """
-telegram_bot.py — Telegram Bot für Tierkalb v3.3
+telegram_bot.py — Telegram Bot für HerdenPilot v3.3
 """
 
 import threading
@@ -127,7 +127,7 @@ def build_status_message(farm_id: str, farm_name: str) -> str:
     import database as db
     heute = date.today()
     tiere = db.get_alle_tiere(farm_id)
-    lines = [f"<b>🐄 Tierkalb — {farm_name}</b>", f"📅 {heute.strftime('%d.%m.%Y')}\n"]
+    lines = [f"<b>🐄 HerdenPilot — {farm_name}</b>", f"📅 {heute.strftime('%d.%m.%Y')}\n"]
 
     upcoming = db.get_upcoming_geburten(farm_id, days=30)
     if upcoming:
@@ -260,7 +260,7 @@ def build_tiere_message(tiere: list, farm_name: str) -> str:
 
 def build_hilfe_message(farm_name: str) -> str:
     return (
-        f"<b>🐄 Tierkalb — {farm_name}</b>\n\n"
+        f"<b>🐄 HerdenPilot — {farm_name}</b>\n\n"
         "<b>Abfragen:</b>\n/status — Brunft, Trächtigkeit, Geburten, TK-Kontrolle\n/tiere  — Alle Tiere auflisten\n\n"
         "<b>Neues Tier anlegen:</b>\n/neues_tier Emma Rind     — Kuh namens Emma anlegen\n/neues_tier Wolke Schaf   — Schaf namens Wolke anlegen\n\n"
         "<b>Eingabe (aus dem Stall):</b>\n"
@@ -271,7 +271,7 @@ def build_hilfe_message(farm_name: str) -> str:
         "<b>Trächtigkeitskontrolle:</b>\nErscheint automatisch in /status wenn die Kontrolle fällig ist.\n"
         "War die Kontrolle negativ → /brunft Emma\n\n"
         "<i>Namen können abgekürzt werden: /besamung em findet Emma</i>\n"
-        "<i>Täglich 6:00 Uhr: automatische Geburts- und TK-Meldung</i>"
+        "<i>Täglich 6:00 Uhr: automatische Geburts-, TK- und Impfmeldung</i>"
     )
 
 
