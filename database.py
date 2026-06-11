@@ -1,5 +1,5 @@
 """
-database.py — SQLite für Tierkalb v3.3
+database.py — SQLite für HerdenPilot v3.3
 """
 
 import sqlite3
@@ -458,6 +458,8 @@ def get_kosten_pro_geburt(farm_id):
 
 
 def get_faellige_impfungen(farm_id, vorlauf_tage=30):
+    # Nur Tiere mit mindestens einer eingetragenen Impfung erinnern —
+    # "nie geimpft" würde sonst die ganze Herde listen und das Dashboard dominieren.
     grenze_tage = 365 - vorlauf_tage
     conn = get_connection()
     rows = conn.execute("""
@@ -467,10 +469,10 @@ def get_faellige_impfungen(farm_id, vorlauf_tage=30):
                CAST(julianday('now') - julianday(MAX(e.datum)) AS INTEGER) AS tage_seit_impfung
         FROM tiere t
         LEFT JOIN tierarten ta ON t.tierart_id = ta.id
-        LEFT JOIN ereignisse e ON e.tier_id = t.id AND e.farm_id = t.farm_id AND e.typ = 'impfung'
+        JOIN ereignisse e ON e.tier_id = t.id AND e.farm_id = t.farm_id AND e.typ = 'impfung'
         WHERE t.farm_id = ? AND t.status = 'Aktiv'
         GROUP BY t.id
-        HAVING MAX(e.datum) IS NULL OR julianday('now') - julianday(MAX(e.datum)) > ?
+        HAVING julianday('now') - julianday(MAX(e.datum)) > ?
         ORDER BY letzte_impfung ASC
     """, (farm_id, grenze_tage)).fetchall()
     conn.close()
