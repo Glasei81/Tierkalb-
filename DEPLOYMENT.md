@@ -1,164 +1,118 @@
-# HerdenPilot — Installation auf Windows
+# HerdenPilot — Installation
 
-Diese Anleitung führt dich Schritt für Schritt durch die Installation auf einem Windows-PC.
-Keine Vorkenntnisse nötig.
+Drei Wege, je nach Gerät und Erfahrung. Für Windows-Einsteiger ist **Variante 1** die einfachste.
 
 ---
 
-## Schritt 1 — Git installieren
+## Variante 1 — Fertige exe (Windows, am einfachsten)
 
-Git wird gebraucht, um den App-Code herunterzuladen.
+Keine Installation von Git, Docker oder Python nötig.
+
+1. Geh auf die [Releases-Seite](https://github.com/Glasei81/Tierkalb-/releases)
+2. Bei der neuesten Version **`HerdenPilot.exe`** herunterladen
+3. Doppelklick auf die Datei
+   - Windows zeigt evtl. eine Warnung („Unbekannter Herausgeber“):
+     **„Weitere Informationen“** → **„Trotzdem ausführen“** klicken
+4. Ein schwarzes Fenster öffnet sich (das ist der Server — **offen lassen**),
+   und der Browser startet automatisch mit der App
+
+**Daten:** liegen im Ordner `data` neben der exe — diesen Ordner sichern = Backup.
+
+**Update:** Neue `HerdenPilot.exe` herunterladen und die alte ersetzen. Den `data`-Ordner behalten — alle Tiere und Einträge bleiben erhalten.
+
+**Beenden:** Das schwarze Fenster schließen.
+
+---
+
+## Variante 2 — Mit Git + Docker (Windows/Mac/Linux, für Server-Betrieb)
+
+Geeignet wenn die App dauerhaft laufen soll (z. B. auf einem Mini-PC oder Server).
+
+### Schritt 1 — Git installieren
 
 1. Geh auf [git-scm.com/downloads](https://git-scm.com/downloads)
-2. Klick auf **"Download for Windows"**
-3. Installer starten → immer auf **"Next"** klicken, nichts ändern → **"Install"**
-4. Nach der Installation auf **"Finish"** klicken
+2. Installer herunterladen und durchklicken (nichts ändern)
 
----
-
-## Schritt 2 — Docker Desktop installieren
-
-Docker sorgt dafür, dass die App läuft — ohne Python oder andere Programme manuell installieren zu müssen.
+### Schritt 2 — Docker Desktop installieren
 
 1. Geh auf [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
-2. Klick auf **"Download for Windows"**
-3. Installer starten → auf **"OK"** bzw. **"Accept"** klicken
-4. PC neu starten wenn verlangt
-5. **Docker Desktop** öffnen — warten bis unten links ein **grünes Symbol** erscheint
+2. Installer herunterladen, durchklicken, PC neu starten wenn verlangt
+3. Docker Desktop öffnen — warten bis das **grüne Symbol** erscheint
 
-> ⚠️ Falls Docker beim Start fragt ob WSL2 installiert werden soll: **Ja** klicken und warten.
+> ⚠️ Falls Docker fragt ob WSL2 installiert werden soll: **Ja** klicken.
 
----
+### Schritt 3 — App herunterladen und starten
 
-## Schritt 3 — App herunterladen
-
-1. Auf dem Desktop Rechtsklick → **"Git Bash Here"** öffnen  
-   *(alternativ: Windows-Suche → "Git Bash" eingeben und öffnen)*
-2. Diesen Befehl eingeben und mit Enter bestätigen:
+Im Terminal (Windows: „Git Bash“, Mac: „Terminal“):
 
 ```bash
 git clone https://github.com/Glasei81/Tierkalb-.git
 cd Tierkalb-
-```
-
-Es wird ein Ordner `Tierkalb-` erstellt — entweder auf dem Desktop oder im Benutzer-Ordner (`C:\Users\DeinName\Tierkalb-`).
-
----
-
-## Schritt 4 — App starten
-
-1. App starten:
-
-```bash
 docker compose up -d
 ```
 
-Das dauert beim ersten Mal 1–2 Minuten, weil Docker die App einrichtet.
+Dann Browser öffnen: **http://localhost:5000**
 
-2. Browser öffnen und folgende Adresse eingeben:
+### Stoppen / Starten / Updaten
 
+```bash
+docker compose down              # Stoppen
+docker compose up -d             # Starten
+git pull && docker compose up -d --build   # Update
 ```
-http://localhost:5000
-```
 
-Es erscheint der **Einrichtungs-Assistent** — Betriebsnamen eingeben, fertig.
+Windows-Nutzer können fürs Update auch einfach `update.bat` doppelklicken.
 
 ---
 
-## Schritt 5 — Tailscale einrichten (Fernzugriff)
+## Variante 3 — Zugriff auf eine bestehende Installation (Hauspi)
 
-Mit Tailscale kannst du die App auch von anderen Geräten aus aufrufen — z. B. vom Handy oder einem anderen PC.
+Wenn HerdenPilot bereits auf einem Raspberry Pi (Hauspi) läuft, brauchst du **gar nichts installieren** — nur Tailscale für den Zugriff.
 
-1. Geh auf [tailscale.com/download](https://tailscale.com/download)
-2. **"Download for Windows"** klicken und installieren
-3. Tailscale öffnen → **"Log in"** mit einem Google- oder GitHub-Konto (kostenlos)
-4. Nach dem Login erscheint eine IP-Adresse wie `100.x.x.x` — das ist die Tailscale-IP dieses PCs
-
-Jetzt kann jeder, der ebenfalls Tailscale installiert hat und von dir eingeladen wurde, die App über diese Adresse aufrufen:
+1. **Tailscale** installieren: [tailscale.com/download](https://tailscale.com/download)
+2. Einladungslink vom Betreiber öffnen und mit einem Konto anmelden (Google/GitHub reicht)
+3. Browser öffnen — die Adresse bekommst du vom Betreiber:
 
 ```
 http://100.x.x.x:5000
 ```
-
-### Kollegen oder andere Geräte einladen
-
-1. Geh auf [login.tailscale.com](https://login.tailscale.com) → **Users** → **Invite users**
-2. E-Mail-Adresse eingeben
-3. Die eingeladene Person installiert Tailscale, meldet sich an und kann sofort zugreifen
-
----
-
-## App stoppen und neu starten
-
-```bash
-docker compose down    # Stoppen
-docker compose up -d   # Starten
-```
-
----
-
-## Update auf eine neue Version
-
-Entweder im Git Bash:
-
-```bash
-cd Tierkalb-
-git pull
-docker compose up -d --build
-```
-
-Oder einfach die Datei **`update.bat`** im Ordner `Tierkalb-` doppelklicken.
-
----
-
-## Häufige Probleme
-
-**"Port 5000 ist bereits belegt"**  
-Ein anderes Programm nutzt Port 5000. In der Datei `docker-compose.yml` im Ordner `Tierkalb-` die Zeile  
-`- "5000:5000"` ändern zu `- "5001:5000"`.  
-Dann `docker compose up -d --build` eingeben. App läuft danach auf `http://localhost:5001`.
-
-**Docker Desktop startet nicht**  
-Virtualisierung ist möglicherweise im BIOS deaktiviert. Beim Start fragt Docker meistens selbst nach und bietet die Lösung an — einfach den Anweisungen auf dem Bildschirm folgen.
-
-**Der Befehl "docker" wird nicht erkannt**  
-Docker Desktop ist noch nicht gestartet. Docker Desktop öffnen, warten bis das grüne Symbol erscheint, dann nochmal versuchen.
-
----
-
----
-
-# Alternative: Zugriff auf den Hauspi (bestehende Installation)
-
-Wenn HerdenPilot bereits auf einem Raspberry Pi (Hauspi) läuft, brauchst du nichts installieren.
-Du greifst einfach über Tailscale auf die laufende App zu.
-
-### Voraussetzungen
-
-- Hauspi läuft bereits mit HerdenPilot
-- Tailscale ist auf dem Hauspi installiert
-- Du hast eine Einladung ins Tailscale-Netzwerk des Hauspi-Betreibers bekommen
-
-### So richtest du es ein
-
-1. **Tailscale** auf deinem Gerät installieren: [tailscale.com/download](https://tailscale.com/download)
-2. Einladungslink aus der E-Mail öffnen und mit einem Konto anmelden
-3. Browser öffnen und folgende Adresse eingeben — du bekommst sie vom Betreiber:
-
-```
-http://100.x.x.x:5000
-```
-
-Fertig — keine weitere Installation nötig.
 
 ### Tailscale auf dem Hauspi einrichten (nur für den Betreiber)
-
-Falls Tailscale auf dem Hauspi noch nicht installiert ist:
 
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh
 sudo tailscale up
 ```
 
-Es erscheint ein Link im Terminal — diesen im Browser öffnen und mit dem Tailscale-Konto anmelden.
-Danach hat der Hauspi eine feste Tailscale-IP (`100.x.x.x`) und ist von überall erreichbar.
+Den angezeigten Link im Browser öffnen und anmelden. Danach hat der Hauspi eine feste Tailscale-IP (`100.x.x.x`) und ist von überall erreichbar.
+
+### Kollegen einladen
+
+1. [login.tailscale.com](https://login.tailscale.com) → **Users** → **Invite users**
+2. E-Mail-Adresse eingeben — die Person installiert Tailscale, meldet sich an, fertig
+
+---
+
+## Fernzugriff auch für Variante 1 und 2 (Tailscale)
+
+Läuft die App auf deinem eigenen PC, kannst du sie mit Tailscale von überall erreichen:
+
+1. [tailscale.com/download](https://tailscale.com/download) → installieren → anmelden (kostenlos)
+2. Die angezeigte IP (`100.x.x.x`) notieren
+3. Von jedem Gerät im Tailscale-Netz: `http://100.x.x.x:5000`
+
+---
+
+## Häufige Probleme
+
+**„Port 5000 ist bereits belegt“** (Variante 2)
+In `docker-compose.yml` die Zeile `- "5000:5000"` ändern zu `- "5001:5000"`, dann neu starten. App läuft auf `http://localhost:5001`.
+
+**Docker Desktop startet nicht**
+Virtualisierung im BIOS aktivieren — Docker zeigt beim Start meist selbst die Lösung an.
+
+**Windows blockiert die exe**
+SmartScreen-Warnung: „Weitere Informationen“ → „Trotzdem ausführen“. Die exe ist nicht signiert, daher die Warnung.
+
+**Der Befehl „docker“ wird nicht erkannt**
+Docker Desktop ist noch nicht gestartet — öffnen, auf das grüne Symbol warten, nochmal versuchen.
