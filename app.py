@@ -1,8 +1,9 @@
 """
-app.py — Tierkalb v3.3
+app.py — HerdenPilot v3.3
 """
 
 import os
+import sys
 import csv
 from io import BytesIO, StringIO
 from datetime import date, timedelta
@@ -16,7 +17,16 @@ from flask import (
 import database as db
 from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN
 
-app = Flask(__name__)
+
+def _resource_path(rel):
+    # PyInstaller entpackt Templates/Static nach sys._MEIPASS
+    base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base, rel)
+
+
+app = Flask(__name__,
+            template_folder=_resource_path("templates"),
+            static_folder=_resource_path("static"))
 
 _EREIGNIS_KOSTEN_MAP = {
     "besamung":  "Besamung",
@@ -397,7 +407,7 @@ def export_csv():
     bio.write(b"\xef\xbb\xbf")
     bio.write(out.getvalue().encode("utf-8"))
     bio.seek(0)
-    filename = f"tierkalb_{farm['name']}_{date.today().isoformat()}.csv"
+    filename = f"herdenpilot_{farm['name']}_{date.today().isoformat()}.csv"
     return send_file(bio, mimetype="text/csv", as_attachment=True, download_name=filename)
 
 
@@ -434,7 +444,7 @@ def export_pdf():
         ]))
         return tbl
     story = []
-    story.append(Paragraph(f"Tierkalb — {farm['name']}", h1))
+    story.append(Paragraph(f"HerdenPilot — {farm['name']}", h1))
     story.append(Paragraph(f"Bericht vom {date.today().strftime('%d.%m.%Y')}", normal))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.grey))
     story.append(Spacer(1, 0.4*cm))
@@ -471,7 +481,7 @@ def export_pdf():
             story.append(Spacer(1, 0.2*cm))
     doc.build(story)
     bio.seek(0)
-    filename = f"tierkalb_{farm['name']}_{date.today().isoformat()}.pdf"
+    filename = f"herdenpilot_{farm['name']}_{date.today().isoformat()}.pdf"
     return send_file(bio, mimetype="application/pdf", as_attachment=True, download_name=filename)
 
 
@@ -512,7 +522,7 @@ def telegram_test():
         flash("Bitte Token und Chat-ID eingeben und speichern.", "error")
         return redirect(url_for("einstellungen"))
     from telegram_bot import send_message
-    ok = send_message(token, chat_id, "✅ Tierkalb — Verbindung erfolgreich! 🐄")
+    ok = send_message(token, chat_id, "✅ HerdenPilot — Verbindung erfolgreich! 🐄")
     flash("✅ Testnachricht gesendet!" if ok else "❌ Fehler — Token oder Chat-ID prüfen.",
           "success" if ok else "error")
     return redirect(url_for("einstellungen"))
