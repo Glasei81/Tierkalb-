@@ -52,6 +52,45 @@ def _load_secret_key() -> str:
 
 app.secret_key = os.environ.get("SECRET_KEY") or _load_secret_key()
 
+LOGIN_PASSWORD = os.environ.get("LOGIN_PASSWORD", "")
+
+
+@app.context_processor
+def inject_auth_ctx():
+    return {
+        "hp_auth": bool(session.get("hp_auth")),
+        "login_enabled": bool(LOGIN_PASSWORD),
+    }
+
+
+@app.before_request
+def check_login():
+    if not LOGIN_PASSWORD:
+        return
+    if request.endpoint in ("login", "logout", "static"):
+        return
+    if not session.get("hp_auth"):
+        return redirect(url_for("login", next=request.path))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if not LOGIN_PASSWORD:
+        return redirect(url_for("index"))
+    error = False
+    if request.method == "POST":
+        if request.form.get("password") == LOGIN_PASSWORD:
+            session["hp_auth"] = True
+            return redirect(request.form.get("next") or url_for("index"))
+        error = True
+    return render_template("login.html", error=error, next=request.args.get("next", "/"))
+
+
+@app.route("/logout")
+def logout():
+    session.pop("hp_auth", None)
+    return redirect(url_for("login"))
+
 
 def get_farm_id():
     if "farm_id" in session:

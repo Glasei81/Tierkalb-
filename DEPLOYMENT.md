@@ -11,8 +11,8 @@ Keine Installation von Git, Docker oder Python nötig.
 1. Geh auf die [Releases-Seite](https://github.com/Glasei81/Tierkalb-/releases)
 2. Bei der neuesten Version **`HerdenPilot.exe`** herunterladen
 3. Doppelklick auf die Datei
-   - Windows zeigt evtl. eine Warnung („Unbekannter Herausgeber“):
-     **„Weitere Informationen“** → **„Trotzdem ausführen“** klicken
+   - Windows zeigt evtl. eine Warnung („Unbekannter Herausgeber"):
+     **„Weitere Informationen"** → **„Trotzdem ausführen"** klicken
 4. Ein schwarzes Fenster öffnet sich (das ist der Server — **offen lassen**),
    und der Browser startet automatisch mit der App
 
@@ -26,7 +26,7 @@ Keine Installation von Git, Docker oder Python nötig.
 
 ## Variante 2 — Mit Git + Docker (Windows/Mac/Linux, für Server-Betrieb)
 
-Geeignet wenn die App dauerhaft laufen soll (z. B. auf einem Mini-PC oder Server).
+Geeignet wenn die App dauerhaft laufen soll (z. B. auf einem Mini-PC oder Server).
 
 ### Schritt 1 — Git installieren
 
@@ -43,7 +43,7 @@ Geeignet wenn die App dauerhaft laufen soll (z. B. auf einem Mini-PC oder Serve
 
 ### Schritt 3 — App herunterladen und starten
 
-Im Terminal (Windows: „Git Bash“, Mac: „Terminal“):
+Im Terminal (Windows: „Git Bash", Mac: „Terminal"):
 
 ```bash
 git clone https://github.com/Glasei81/Tierkalb-.git
@@ -105,14 +105,82 @@ Läuft die App auf deinem eigenen PC, kannst du sie mit Tailscale von überall e
 
 ## Häufige Probleme
 
-**„Port 5000 ist bereits belegt“** (Variante 2)
+**„Port 5000 ist bereits belegt"** (Variante 2)
 In `docker-compose.yml` die Zeile `- "5000:5000"` ändern zu `- "5001:5000"`, dann neu starten. App läuft auf `http://localhost:5001`.
 
 **Docker Desktop startet nicht**
 Virtualisierung im BIOS aktivieren — Docker zeigt beim Start meist selbst die Lösung an.
 
 **Windows blockiert die exe**
-SmartScreen-Warnung: „Weitere Informationen“ → „Trotzdem ausführen“. Die exe ist nicht signiert, daher die Warnung.
+SmartScreen-Warnung: „Weitere Informationen" → „Trotzdem ausführen". Die exe ist nicht signiert, daher die Warnung.
 
-**Der Befehl „docker“ wird nicht erkannt**
+**Der Befehl „docker" wird nicht erkannt**
 Docker Desktop ist noch nicht gestartet — öffnen, auf das grüne Symbol warten, nochmal versuchen.
+
+---
+
+## Variante 4 — Online auf Fly.io (für iPad, ohne eigenes Gerät)
+
+Ideal wenn der Kollege kein Windows-PC oder Raspberry Pi haben möchte — die App läuft in der Cloud und ist per URL von jedem Gerät (iPad, iPhone, Android, PC) erreichbar.
+
+**Kosten:** kostenlos (Fly.io Free Tier, 3 GB Speicher, immer online)
+
+### Einmalige Einrichtung (macht der Betreiber, ca. 10 Minuten)
+
+**Schritt 1 — flyctl installieren**
+
+```bash
+# Mac/Linux:
+curl -L https://fly.io/install.sh | sh
+
+# Windows (PowerShell):
+pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"
+```
+
+**Schritt 2 — Anmelden und App erstellen**
+
+```bash
+fly auth login
+fly launch --no-deploy
+```
+
+Fly.io schlägt einen App-Namen vor (z. B. `herdenpilot-abc123`) — das wird die URL.
+
+**Schritt 3 — Datenspeicher anlegen**
+
+```bash
+fly volumes create herdenpilot_data --size 1 --region fra
+```
+
+**Schritt 4 — Passwort und Secrets setzen**
+
+```bash
+fly secrets set LOGIN_PASSWORD=einSicheresPasswort
+fly secrets set SECRET_KEY=$(openssl rand -hex 32)
+```
+
+**Schritt 5 — Starten**
+
+```bash
+fly deploy
+```
+
+Die App ist danach unter `https://APPNAME.fly.dev` erreichbar.
+
+### Kollegen einladen
+
+1. URL mitteilen: `https://APPNAME.fly.dev`
+2. Passwort mitteilen (das aus Schritt 4)
+3. Fertig — öffnen im Safari auf dem iPad, als PWA zum Homescreen hinzufügen
+
+### Update einspielen
+
+```bash
+git pull && fly deploy
+```
+
+### Hinweise
+
+- **Abmelden:** Oben rechts in der App → „Abmelden"
+- **Daten:** liegen auf dem Fly.io Volume, nicht auf eurem Gerät — regelmäßig CSV exportieren als Backup
+- **Ohne Passwort:** Wenn `LOGIN_PASSWORD` nicht gesetzt ist, ist die App ohne Login erreichbar (für lokalen Betrieb hinter Tailscale OK)
