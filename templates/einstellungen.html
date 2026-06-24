@@ -2,7 +2,7 @@
 {% block title %}Einstellungen — HerdenPilot{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-7">
+  <div class="col-md-8">
     <h4 class="fw-bold mb-4"><i class="bi bi-gear"></i> Einstellungen</h4>
 
     <form method="POST">
@@ -23,39 +23,171 @@
         </div>
       </div>
 
+      <!-- BENACHRICHTIGUNGEN -->
       <div class="card mb-4">
-        <div class="card-header" style="background:#0088cc;color:white">
-          <strong><i class="bi bi-telegram"></i> Telegram-Benachrichtigungen</strong>
+        <div class="card-header green">
+          <strong><i class="bi bi-bell"></i> Benachrichtigungen</strong>
+          <small class="d-block fw-normal mt-1 opacity-75">Alle aktiven Kanäle erhalten täglich um 6:00 Uhr denselben Bericht — mehrere gleichzeitig möglich</small>
         </div>
-        <div class="card-body">
-          <p class="text-muted small">
-            Täglich um 6:00 Uhr erhältst du eine Nachricht mit anstehenden Geburten.
-            Du kannst auch direkt aus dem Stall Ereignisse eintragen.
-          </p>
-          <div class="alert alert-light border small">
-            <strong>Einrichtung:</strong><br>
-            1. <code>@BotFather</code> auf Telegram → <code>/newbot</code> → Token kopieren<br>
-            2. <code>@userinfobot</code> auf Telegram → <code>/start</code> → deine Chat-ID kopieren<br>
-            3. Beide Werte unten eintragen und speichern<br>
-            4. Mit „Testnachricht senden“ prüfen ob alles klappt
+        <div class="card-body p-0">
+
+          <!-- TELEGRAM -->
+          <div class="border-bottom p-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <i class="bi bi-telegram fs-5" style="color:#0088cc"></i>
+                <strong class="ms-2">Telegram</strong>
+                <span class="badge ms-2" style="background:#0088cc">Befehle aus dem Stall</span>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input fs-5" type="checkbox" name="notify_telegram"
+                       id="sw_telegram" {{ 'checked' if notify_telegram }}
+                       onchange="document.getElementById('cfg_telegram').classList.toggle('d-none',!this.checked)">
+              </div>
+            </div>
+            <div id="cfg_telegram" class="mt-3 {{ '' if notify_telegram else 'd-none' }}">
+              <div class="row g-2 mb-2">
+                <div class="col-sm-7">
+                  <label class="form-label small fw-semibold">Bot-Token</label>
+                  <input type="text" name="telegram_token" class="form-control form-control-sm font-monospace"
+                         value="{{ telegram_token }}" placeholder="123456789:AAFxxx...">
+                </div>
+                <div class="col-sm-5">
+                  <label class="form-label small fw-semibold">Chat-ID</label>
+                  <input type="text" name="telegram_chat_id" class="form-control form-control-sm font-monospace"
+                         value="{{ telegram_chat_id }}" placeholder="123456789">
+                </div>
+              </div>
+              <details class="mb-2">
+                <summary class="text-muted small" style="cursor:pointer">📖 Einrichtungsanleitung anzeigen</summary>
+                <div class="alert alert-light border small mt-2 mb-0">
+                  1. Telegram öffnen → <strong>@BotFather</strong> suchen → <code>/newbot</code> → Name eingeben → <strong>Token kopieren</strong><br>
+                  2. <strong>@userinfobot</strong> suchen → <code>/start</code> → <strong>Chat-ID kopieren</strong><br>
+                  3. Beide Werte oben eintragen → Speichern → Testmeldung senden<br>
+                  4. Danach: Befehle wie <code>/status</code>, <code>/besamung Emma</code> direkt im Chat nutzen
+                </div>
+              </details>
+              {% if telegram_token and telegram_chat_id %}
+              <form method="POST" action="/telegram/test" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-send"></i> Testmeldung senden
+                </button>
+              </form>
+              {% endif %}
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Bot-Token</label>
-            <input type="text" name="telegram_token" class="form-control font-monospace"
-                   value="{{ telegram_token }}"
-                   placeholder="123456789:AAFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+
+          <!-- NTFY -->
+          <div class="border-bottom p-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <i class="bi bi-bell-fill fs-5" style="color:#7c4dff"></i>
+                <strong class="ms-2">ntfy.sh</strong>
+                <span class="badge ms-2" style="background:#7c4dff">Push-Benachrichtigung</span>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input fs-5" type="checkbox" name="notify_ntfy"
+                       id="sw_ntfy" {{ 'checked' if notify_ntfy }}
+                       onchange="document.getElementById('cfg_ntfy').classList.toggle('d-none',!this.checked)">
+              </div>
+            </div>
+            <div id="cfg_ntfy" class="mt-3 {{ '' if notify_ntfy else 'd-none' }}">
+              <div class="row g-2 mb-2">
+                <div class="col-sm-8">
+                  <label class="form-label small fw-semibold">Thema (Topic)</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text font-monospace">ntfy.sh/</span>
+                    <input type="text" name="ntfy_topic" class="form-control font-monospace"
+                           value="{{ ntfy_topic }}" placeholder="mein-hof-geheim123">
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <label class="form-label small fw-semibold">Server <span class="text-muted fw-normal">(optional)</span></label>
+                  <input type="text" name="ntfy_server" class="form-control form-control-sm font-monospace"
+                         value="{{ ntfy_server }}" placeholder="ntfy.sh">
+                </div>
+              </div>
+              <details class="mb-2">
+                <summary class="text-muted small" style="cursor:pointer">📖 Einrichtungsanleitung anzeigen</summary>
+                <div class="alert alert-light border small mt-2 mb-0">
+                  1. App <strong>ntfy</strong> aus dem <strong>App Store</strong> (iOS/iPad) oder Play Store installieren — kostenlos<br>
+                  2. In der App: <strong>+ Abonnieren</strong> → Topic-Namen eingeben (z.B. <code>mein-hof-abc123</code>)<br>
+                  3. Denselben Namen oben eintragen → Speichern → Testmeldung senden<br>
+                  <strong>Tipp:</strong> Wähle einen zufälligen, schwer erratbaren Namen — wer den Namen kennt, kann mitlesen
+                </div>
+              </details>
+              {% if ntfy_topic %}
+              <form method="POST" action="/ntfy/test" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-send"></i> Testmeldung senden
+                </button>
+              </form>
+              {% endif %}
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Chat-ID</label>
-            <input type="text" name="telegram_chat_id" class="form-control font-monospace"
-                   value="{{ telegram_chat_id }}"
-                   placeholder="123456789">
+
+          <!-- EMAIL -->
+          <div class="p-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <i class="bi bi-envelope-fill fs-5" style="color:#e65100"></i>
+                <strong class="ms-2">E-Mail</strong>
+                <span class="badge ms-2" style="background:#e65100">SMTP</span>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input fs-5" type="checkbox" name="notify_email"
+                       id="sw_email" {{ 'checked' if notify_email }}
+                       onchange="document.getElementById('cfg_email').classList.toggle('d-none',!this.checked)">
+              </div>
+            </div>
+            <div id="cfg_email" class="mt-3 {{ '' if notify_email else 'd-none' }}">
+              <div class="row g-2 mb-2">
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold">SMTP-Server</label>
+                  <input type="text" name="email_smtp" class="form-control form-control-sm font-monospace"
+                         value="{{ email_smtp }}" placeholder="smtp.gmail.com">
+                </div>
+                <div class="col-sm-2">
+                  <label class="form-label small fw-semibold">Port</label>
+                  <input type="number" name="email_port" class="form-control form-control-sm"
+                         value="{{ email_port }}" placeholder="587">
+                </div>
+                <div class="col-sm-4">
+                  <label class="form-label small fw-semibold">Empfänger</label>
+                  <input type="email" name="email_to" class="form-control form-control-sm"
+                         value="{{ email_to }}" placeholder="du@betrieb.at">
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold">Benutzername</label>
+                  <input type="text" name="email_user" class="form-control form-control-sm"
+                         value="{{ email_user }}" placeholder="deine@gmail.com">
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label small fw-semibold">Passwort / App-Passwort</label>
+                  <input type="password" name="email_password" class="form-control form-control-sm"
+                         value="{{ email_password }}" placeholder="••••••••••••••••">
+                </div>
+              </div>
+              <details class="mb-2">
+                <summary class="text-muted small" style="cursor:pointer">📖 Einrichtungsanleitung (Gmail) anzeigen</summary>
+                <div class="alert alert-light border small mt-2 mb-0">
+                  1. Google-Konto → Sicherheit → <strong>2-Faktor-Authentifizierung aktivieren</strong><br>
+                  2. Sicherheit → <strong>App-Passwörter</strong> → Neues App-Passwort → "Mail" → 16-stelligen Code kopieren<br>
+                  3. SMTP: <code>smtp.gmail.com</code>, Port: <code>587</code><br>
+                  4. Benutzername: deine Gmail-Adresse, Passwort: der 16-stellige Code aus Schritt 2<br>
+                  <strong>Wichtig:</strong> Gib hier niemals dein normales Gmail-Passwort ein — nur App-Passwörter!
+                </div>
+              </details>
+              {% if email_smtp and email_user %}
+              <form method="POST" action="/email/test" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-send"></i> Testmeldung senden
+                </button>
+              </form>
+              {% endif %}
+            </div>
           </div>
-          {% if telegram_token and telegram_chat_id %}
-          <div class="mb-2">
-            <span class="badge bg-success">✅ Telegram konfiguriert</span>
-          </div>
-          {% endif %}
+
         </div>
       </div>
 
@@ -66,14 +198,6 @@
         <a href="/dashboard" class="btn btn-outline-secondary">Abbrechen</a>
       </div>
     </form>
-
-    {% if telegram_token and telegram_chat_id %}
-    <form method="POST" action="/telegram/test" class="mt-3">
-      <button type="submit" class="btn btn-outline-info">
-        <i class="bi bi-send"></i> Testnachricht senden
-      </button>
-    </form>
-    {% endif %}
 
   </div>
 </div>

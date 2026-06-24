@@ -2,8 +2,12 @@
 telegram_bot.py — Telegram Bot für HerdenPilot v3.3
 """
 
+import re
 import threading
 import time
+import smtplib
+from email.mime.text import MIMEText
+
 import requests
 from datetime import date, timedelta
 
@@ -17,6 +21,10 @@ _TK_TAGE = {
 }
 
 
+def _strip_html(text: str) -> str:
+    return re.sub(r'<[^>]+>', '', text)
+
+
 def send_message(token: str, chat_id: str, text: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     try:
@@ -24,6 +32,43 @@ def send_message(token: str, chat_id: str, text: str) -> bool:
         return r.ok
     except Exception as e:
         print(f"[Telegram] Sendefehler: {e}")
+        return False
+
+
+def send_ntfy(topic: str, message: str, server: str = "ntfy.sh") -> bool:
+    if not topic:
+        return False
+    server = server.strip().strip("/")
+    topic  = topic.strip().strip("/")
+    url = f"https://{server}/{topic}"
+    try:
+        r = requests.post(
+            url,
+            data=_strip_html(message).encode("utf-8"),
+            headers={"Title": "HerdenPilot", "Tags": "cow"},
+            timeout=10,
+        )
+        return r.ok
+    except Exception as e:
+        print(f"[ntfy] Sendefehler: {e}")
+        return False
+
+
+def send_email_notification(smtp_host: str, port: str, user: str,
+                             password: str, to: str, subject: str, body: str) -> bool:
+    try:
+        msg = MIMEText(body, "plain", "utf-8")
+        msg["Subject"] = subject
+        msg["From"] = user
+        msg["To"] = to
+        with smtplib.SMTP(smtp_host, int(port)) as srv:
+            srv.ehlo()
+            srv.starttls()
+            srv.login(user, password)
+            srv.send_message(msg)
+        return True
+    except Exception as e:
+        print(f"[Email] Sendefehler: {e}")
         return False
 
 
@@ -402,15 +447,12 @@ def send_daily_update(app):
         import database as db
         for farm in db.get_all_farms():
             fid = farm["id"]
-            token   = db.get_config(fid, "telegram_token", "")
-            chat_id = db.get_config(fid, "telegram_chat_id", "")
-            if not token or not chat_id:
-                continue
             upcoming  = db.get_upcoming_geburten(fid, days=14)
             tk_liste  = build_tk_liste(fid)
             impfungen = db.get_faellige_impfungen(fid)
             if not upcoming and not tk_liste and not impfungen:
                 continue
+
             lines = [f"<b>🌅 Guten Morgen! — {farm['name']}</b>"]
             if upcoming:
                 lines.append("\nGeburten in den nächsten 14 Tagen:")
@@ -432,7 +474,33 @@ def send_daily_update(app):
                     if letzte: lines.append(f"  {em} {imp['name']} — letzte Impfung vor {int(imp.get('tage_seit_impfung') or 0)} Tagen")
                     else:      lines.append(f"  {em} {imp['name']} — noch nie geimpft")
             lines.append("\n💡 /status für vollständigen Überblick")
-            send_message(token, chat_id, "\n".join(lines))
+            html_msg = "\n".join(lines)
+
+            # Telegram
+            token   = db.get_config(fid, "telegram_token", "")
+            chat_id = db.get_config(fid, "telegram_chat_id", "")
+            if token and chat_id and db.get_config(fid, "notify_telegram", "1") == "1":
+                send_message(token, chat_id, html_msg)
+
+            # ntfy.sh
+            ntfy_topic  = db.get_config(fid, "ntfy_topic", "")
+            ntfy_server = db.get_config(fid, "ntfy_server", "ntfy.sh")
+            if ntfy_topic and db.get_config(fid, "notify_ntfy", "0") == "1":
+                send_ntfy(ntfy_topic, html_msg, ntfy_server)
+
+            # E-Mail
+            if db.get_config(fid, "notify_email", "0") == "1":
+                smtp = db.get_config(fid, "email_smtp", "")
+                port = db.get_config(fid, "email_port", "587")
+                user = db.get_config(fid, "email_user", "")
+                pw   = db.get_config(fid, "email_password", "")
+                to   = db.get_config(fid, "email_to", "")
+                if smtp and user and pw and to:
+                    send_email_notification(
+                        smtp, port, user, pw, to,
+                        f"🐄 HerdenPilot — {farm['name']}",
+                        _strip_html(html_msg),
+                    )
 
 
 def polling_worker(app):

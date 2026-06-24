@@ -541,6 +541,16 @@ def einstellungen():
         db.set_config(fid, "lang", request.form.get("lang", "de"))
         db.set_config(fid, "telegram_token", request.form.get("telegram_token", "").strip())
         db.set_config(fid, "telegram_chat_id", request.form.get("telegram_chat_id", "").strip())
+        db.set_config(fid, "notify_telegram", "1" if "notify_telegram" in request.form else "0")
+        db.set_config(fid, "notify_ntfy", "1" if "notify_ntfy" in request.form else "0")
+        db.set_config(fid, "ntfy_topic", request.form.get("ntfy_topic", "").strip())
+        db.set_config(fid, "ntfy_server", request.form.get("ntfy_server", "ntfy.sh").strip() or "ntfy.sh")
+        db.set_config(fid, "notify_email", "1" if "notify_email" in request.form else "0")
+        db.set_config(fid, "email_smtp", request.form.get("email_smtp", "").strip())
+        db.set_config(fid, "email_port", request.form.get("email_port", "587").strip() or "587")
+        db.set_config(fid, "email_user", request.form.get("email_user", "").strip())
+        db.set_config(fid, "email_password", request.form.get("email_password", "").strip())
+        db.set_config(fid, "email_to", request.form.get("email_to", "").strip())
         flash("Einstellungen gespeichert.", "success")
         return redirect(url_for("einstellungen"))
     return render_template("einstellungen.html",
@@ -548,6 +558,16 @@ def einstellungen():
         lang=db.get_config(fid, "lang", "de"),
         telegram_token=db.get_config(fid, "telegram_token", ""),
         telegram_chat_id=db.get_config(fid, "telegram_chat_id", ""),
+        notify_telegram=db.get_config(fid, "notify_telegram", "1") == "1",
+        notify_ntfy=db.get_config(fid, "notify_ntfy", "0") == "1",
+        ntfy_topic=db.get_config(fid, "ntfy_topic", ""),
+        ntfy_server=db.get_config(fid, "ntfy_server", "ntfy.sh"),
+        notify_email=db.get_config(fid, "notify_email", "0") == "1",
+        email_smtp=db.get_config(fid, "email_smtp", ""),
+        email_port=db.get_config(fid, "email_port", "587"),
+        email_user=db.get_config(fid, "email_user", ""),
+        email_password=db.get_config(fid, "email_password", ""),
+        email_to=db.get_config(fid, "email_to", ""),
         t=t)
 
 
@@ -563,6 +583,43 @@ def telegram_test():
     from telegram_bot import send_message
     ok = send_message(token, chat_id, "✅ HerdenPilot — Verbindung erfolgreich! 🐄")
     flash("✅ Testnachricht gesendet!" if ok else "❌ Fehler — Token oder Chat-ID prüfen.",
+          "success" if ok else "error")
+    return redirect(url_for("einstellungen"))
+
+
+@app.route("/ntfy/test", methods=["POST"])
+@require_farm
+def ntfy_test():
+    fid = get_farm_id()
+    topic  = db.get_config(fid, "ntfy_topic", "")
+    server = db.get_config(fid, "ntfy_server", "ntfy.sh")
+    if not topic:
+        flash("Bitte Topic eingeben und speichern.", "error")
+        return redirect(url_for("einstellungen"))
+    from telegram_bot import send_ntfy
+    ok = send_ntfy(topic, "✅ HerdenPilot — ntfy.sh Verbindung erfolgreich! 🐄", server)
+    flash("✅ Testmeldung gesendet!" if ok else "❌ Fehler — Topic oder Server prüfen.",
+          "success" if ok else "error")
+    return redirect(url_for("einstellungen"))
+
+
+@app.route("/email/test", methods=["POST"])
+@require_farm
+def email_test():
+    fid = get_farm_id()
+    smtp = db.get_config(fid, "email_smtp", "")
+    port = db.get_config(fid, "email_port", "587")
+    user = db.get_config(fid, "email_user", "")
+    pw   = db.get_config(fid, "email_password", "")
+    to   = db.get_config(fid, "email_to", "")
+    if not smtp or not user or not pw or not to:
+        flash("Bitte alle E-Mail-Felder ausfüllen und speichern.", "error")
+        return redirect(url_for("einstellungen"))
+    from telegram_bot import send_email_notification
+    ok = send_email_notification(smtp, port, user, pw, to,
+                                  "✅ HerdenPilot — Verbindung erfolgreich",
+                                  "✅ HerdenPilot — E-Mail Verbindung erfolgreich! 🐄")
+    flash("✅ Test-E-Mail gesendet!" if ok else "❌ Fehler — SMTP-Einstellungen prüfen.",
           "success" if ok else "error")
     return redirect(url_for("einstellungen"))
 
