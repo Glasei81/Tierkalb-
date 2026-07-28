@@ -15,6 +15,7 @@ from flask import (
 )
 
 import database as db
+import updater
 from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN
 
 
@@ -60,6 +61,7 @@ def inject_auth_ctx():
     return {
         "hp_auth": bool(session.get("hp_auth")),
         "login_enabled": bool(LOGIN_PASSWORD),
+        "app_version": updater.APP_VERSION,
     }
 
 
@@ -530,6 +532,13 @@ def spenden():
     fid = get_farm_id()
     tier_count = db.get_tier_count(fid)
     return render_template("spenden.html", tier_count=tier_count, t=t)
+
+
+@app.route("/update")
+@require_farm
+def update_pruefen():
+    info = updater.check_for_update()
+    return render_template("update.html", info=info, t=t)
 
 
 @app.route("/einstellungen", methods=["GET", "POST"])

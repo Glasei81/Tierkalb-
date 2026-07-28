@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Updates — HerdenPilot{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h4 class="fw-bold mb-4"><i class="bi bi-arrow-repeat"></i> Auf Updates prüfen</h4>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <p class="mb-0">Installierte Version: <strong>v{{ info.current }}</strong></p>
+
+        {% if info.error %}
+          <div class="alert alert-secondary mb-0 mt-3">
+            <i class="bi bi-wifi-off"></i> {{ info.error }}<br>
+            <span class="small text-muted">Du kannst jederzeit selbst nachsehen:
+              <a href="{{ info.release_page }}" target="_blank">Release-Seite auf GitHub</a></span>
+          </div>
+
+        {% elif info.update_available %}
+          <div class="alert alert-primary mt-3">
+            <h5 class="alert-heading mb-1">🔵 Neue Version verfügbar: <strong>{{ info.latest }}</strong></h5>
+            Deine Version <strong>v{{ info.current }}</strong> ist nicht mehr die neueste.
+          </div>
+
+          <h6 class="fw-bold mt-4">✅ Einfachster Weg — mit <code>update.bat</code></h6>
+          <ol class="mb-4">
+            <li><strong>HerdenPilot schließen</strong> — das schwarze Fenster zumachen.
+                Solange es läuft, ist die Datei gesperrt und kann nicht ersetzt werden.</li>
+            <li>Im selben Ordner, in dem <code>HerdenPilot.exe</code> liegt,
+                <strong>Doppelklick auf <code>update.bat</code></strong>.
+                (Die Datei wird beim ersten Start automatisch angelegt.)</li>
+            <li>Warten, bis <em>„Fertig! HerdenPilot ist aktuell"</em> erscheint.</li>
+            <li><code>HerdenPilot.exe</code> wieder starten — <strong>fertig</strong>.
+                Alle Tiere und Einträge sind noch da.</li>
+          </ol>
+
+          <h6 class="fw-bold mt-4">🖐 Alternativer Weg — von Hand</h6>
+          <ol class="mb-4">
+            <li>Unten auf <strong>„Neue Version herunterladen"</strong> klicken — lädt die neue
+                <code>HerdenPilot.exe</code> in deinen Download-Ordner.</li>
+            <li><strong>HerdenPilot schließen</strong> — das schwarze Fenster zumachen.</li>
+            <li>Die heruntergeladene <code>HerdenPilot.exe</code> in den Ordner der alten verschieben;
+                bei der Nachfrage <strong>„Datei im Ziel ersetzen"</strong> wählen.</li>
+            <li>Den Ordner <code>data</code> <strong>nicht anfassen</strong> — dort stehen alle deine Daten.</li>
+            <li><code>HerdenPilot.exe</code> starten — fertig.</li>
+          </ol>
+
+          <div class="alert alert-warning small">
+            <i class="bi bi-shield-exclamation"></i>
+            <strong>Wichtig:</strong> Den Ordner <code>data</code> niemals löschen — er enthält deine
+            komplette Herde. Bei einem Update bleibt er immer unberührt.
+          </div>
+
+          <a href="{{ info.download_url }}" class="btn btn-primary">
+            <i class="bi bi-download"></i> Neue Version herunterladen
+          </a>
+          <a href="{{ info.release_page }}" target="_blank" class="btn btn-outline-secondary">
+            Änderungen ansehen
+          </a>
+
+        {% else %}
+          <div class="alert alert-success mb-0 mt-3">
+            <i class="bi bi-check-circle"></i>
+            Du verwendest bereits die neueste Version (<strong>v{{ info.current }}</strong>).
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <a href="/einstellungen" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Zurück zu den Einstellungen
+    </a>
+  </div>
+</div>
+{% endblock %}

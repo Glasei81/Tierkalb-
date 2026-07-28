@@ -9,6 +9,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 import requests
+import updater
 from datetime import date, timedelta
 
 TK_FENSTER = 7
@@ -96,6 +97,7 @@ def set_bot_commands(token: str) -> bool:
         {"command": "tierarzt",   "description": "Tierarzt-Kosten: /tierarzt Emma 150"},
         {"command": "kosten",     "description": "Sonstige Kosten: /kosten Emma 80"},
         {"command": "hilfe",      "description": "Alle Befehle anzeigen"},
+        {"command": "version",    "description": "Auf neue Version prüfen"},
     ]
     try:
         r = requests.post(url, json={"commands": commands}, timeout=10)
@@ -424,6 +426,23 @@ def cmd_kosten(args: list, typ: str, farm_id: str) -> str:
     return f"✅ {typ} <b>{betrag:.2f} €</b> für <b>{tier['name']}</b> eingetragen ({heute.strftime('%d.%m.%Y')})."
 
 
+def build_version_message() -> str:
+    info = updater.check_for_update()
+    if info["error"]:
+        return f"⚠️ Update-Prüfung nicht möglich:\n{info['error']}"
+    if info["update_available"]:
+        return (
+            f"🔵 <b>Neue Version verfügbar: {info['latest']}</b>\n"
+            f"Deine Version: v{info['current']}\n\n"
+            "<b>So aktualisierst du:</b>\n"
+            "1. HerdenPilot schließen (das schwarze Fenster)\n"
+            "2. <code>update.bat</code> doppelklicken\n"
+            "3. Fertig — deine Daten bleiben alle erhalten\n\n"
+            f"Details: {info['release_page']}"
+        )
+    return f"✅ HerdenPilot v{info['current']} — du bist auf dem neuesten Stand."
+
+
 def handle_command(text: str, farm_id: str, farm_name: str):
     import database as db
     parts = text.strip().split()
@@ -432,6 +451,7 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     if cmd == "/status":     return build_status_message(farm_id, farm_name)
     elif cmd == "/tiere":    return build_tiere_message(db.get_alle_tiere(farm_id), farm_name)
     elif cmd in ("/hilfe", "/help", "/start"): return build_hilfe_message(farm_name)
+    elif cmd in ("/version", "/update"): return build_version_message()
     elif cmd == "/neues_tier": return cmd_neues_tier(args, farm_id)
     elif cmd == "/besamung":   return cmd_besamung(args, farm_id)
     elif cmd == "/brunft":     return cmd_ereignis(args, "brunft", farm_id)
