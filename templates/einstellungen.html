@@ -104,11 +104,9 @@
                 </div>
               </details>
               {% if telegram_token and telegram_chat_id %}
-              <form method="POST" action="/telegram/test" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">
+              <button type="submit" formaction="/telegram/test" formnovalidate class="btn btn-sm btn-outline-secondary">
                   <i class="bi bi-send"></i> Testmeldung senden
                 </button>
-              </form>
               {% endif %}
             </div>
           </div>
@@ -153,11 +151,9 @@
                 </div>
               </details>
               {% if ntfy_topic %}
-              <form method="POST" action="/ntfy/test" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">
+              <button type="submit" formaction="/ntfy/test" formnovalidate class="btn btn-sm btn-outline-secondary">
                   <i class="bi bi-send"></i> Testmeldung senden
                 </button>
-              </form>
               {% endif %}
             </div>
           </div>
@@ -215,11 +211,9 @@
                 </div>
               </details>
               {% if email_smtp and email_user %}
-              <form method="POST" action="/email/test" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">
+              <button type="submit" formaction="/email/test" formnovalidate class="btn btn-sm btn-outline-secondary">
                   <i class="bi bi-send"></i> Testmeldung senden
                 </button>
-              </form>
               {% endif %}
             </div>
           </div>
