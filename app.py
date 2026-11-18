@@ -16,6 +16,7 @@ from flask import (
 
 import database as db
 import updater
+from werkzeug.security import generate_password_hash, check_password_hash
 from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN
 
 
@@ -56,20 +57,36 @@ app.secret_key = os.environ.get("SECRET_KEY") or _load_secret_key()
 LOGIN_PASSWORD = os.environ.get("LOGIN_PASSWORD", "")
 
 
+def _active_login_secret():
+    # Rückgabe: ("env", klartext) | ("hash", hash) | (None, None)
+    # Env-Variable hat Vorrang (z.B. für öffentlichen Tailscale-Funnel),
+    # sonst das in den Einstellungen gesetzte, gehashte Passwort.
+    if LOGIN_PASSWORD:
+        return ("env", LOGIN_PASSWORD)
+    fid = get_farm_id()
+    if fid:
+        h = db.get_config(fid, "login_password_hash", "")
+        if h:
+            return ("hash", h)
+    return (None, None)
+
+
 @app.context_processor
 def inject_auth_ctx():
+    mode, _ = _active_login_secret()
     return {
         "hp_auth": bool(session.get("hp_auth")),
-        "login_enabled": bool(LOGIN_PASSWORD),
+        "login_enabled": bool(mode),
         "app_version": updater.APP_VERSION,
     }
 
 
 @app.before_request
 def check_login():
-    if not LOGIN_PASSWORD:
-        return
     if request.endpoint in ("login", "logout", "static"):
+        return
+    mode, _secret = _active_login_secret()
+    if not mode:
         return
     if not session.get("hp_auth"):
         return redirect(url_for("login", next=request.path))
@@ -77,11 +94,14 @@ def check_login():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if not LOGIN_PASSWORD:
+    mode, secret = _active_login_secret()
+    if not mode:
         return redirect(url_for("index"))
     error = False
     if request.method == "POST":
-        if request.form.get("password") == LOGIN_PASSWORD:
+        pw = request.form.get("password", "")
+        ok = (pw == secret) if mode == "env" else check_password_hash(secret, pw)
+        if ok:
             session["hp_auth"] = True
             return redirect(request.form.get("next") or url_for("index"))
         error = True
@@ -560,6 +580,15 @@ def einstellungen():
         db.set_config(fid, "email_user", request.form.get("email_user", "").strip())
         db.set_config(fid, "email_password", request.form.get("email_password", "").strip())
         db.set_config(fid, "email_to", request.form.get("email_to", "").strip())
+        db.set_config(fid, "notify_time", request.form.get("notify_time", "06:00").strip() or "06:00")
+        if not LOGIN_PASSWORD:
+            if request.form.get("login_password_remove"):
+                db.set_config(fid, "login_password_hash", "")
+            else:
+                _new_pw = request.form.get("login_password", "").strip()
+                if _new_pw:
+                    db.set_config(fid, "login_password_hash", generate_password_hash(_new_pw))
+                    session["hp_auth"] = True
         flash("Einstellungen gespeichert.", "success")
         return redirect(url_for("einstellungen"))
     return render_template("einstellungen.html",
@@ -577,6 +606,9 @@ def einstellungen():
         email_user=db.get_config(fid, "email_user", ""),
         email_password=db.get_config(fid, "email_password", ""),
         email_to=db.get_config(fid, "email_to", ""),
+        notify_time=db.get_config(fid, "notify_time", "06:00"),
+        login_env_forced=bool(LOGIN_PASSWORD),
+        login_pw_set=bool(db.get_config(fid, "login_password_hash", "")),
         t=t)
 
 
