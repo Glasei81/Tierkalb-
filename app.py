@@ -115,13 +115,21 @@ def logout():
 
 
 def get_farm_id():
-    if "farm_id" in session:
-        return session["farm_id"]
-    fid = (
-        request.args.get("farm_id")
-        or request.form.get("farm_id")
-        or request.cookies.get("farm_id")
-    )
+    # Gemerkte IDs (Sitzung/Cookie) nur verwenden, wenn der Betrieb in der
+    # aktuellen Datenbank existiert — sonst z.B. nach Tausch des data-Ordners
+    # fälschlich auf die Einrichtungsseite.
+    fid = session.get("farm_id")
+    if fid and not db.get_farm(fid):
+        session.pop("farm_id", None)
+        fid = None
+    if not fid:
+        cand = (
+            request.args.get("farm_id")
+            or request.form.get("farm_id")
+            or request.cookies.get("farm_id")
+        )
+        if cand and db.get_farm(cand):
+            fid = cand
     if not fid:
         farms = db.get_all_farms()
         if len(farms) == 1:
