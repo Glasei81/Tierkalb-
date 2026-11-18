@@ -441,6 +441,26 @@ def _how_to_update() -> str:
 
 
 def build_version_message() -> str:
+    if updater.update_mode() != "exe":
+        code = updater.check_code_update()
+        stand = f" (Stand {code['local']})" if code["local"] else ""
+        if code["error"]:
+            msg = f"ℹ️ HerdenPilot v{updater.APP_VERSION}{stand}\n{code['error']}"
+            if updater.update_mode() == "auto":
+                msg += "\n\nDen neuesten Stand holst du jederzeit mit /update."
+            return msg
+        if code["update_available"]:
+            n = code["behind"]
+            lines = [f"🔵 <b>{n} neue Änderung{'en' if n != 1 else ''} verfügbar</b>",
+                     f"Stand {code['local']} → {code['remote']}"]
+            for c in code["changes"]:
+                lines.append(f"  • {_html.escape(c)}")
+            lines.append("")
+            lines.append("<b>So aktualisierst du:</b>")
+            lines.append(_how_to_update())
+            return "\n".join(lines)
+        return f"✅ HerdenPilot v{updater.APP_VERSION}{stand} — du bist auf dem neuesten Stand."
+
     info = updater.check_for_update()
     if info["error"]:
         msg = f"⚠️ Update-Prüfung nicht möglich:\n{info['error']}"

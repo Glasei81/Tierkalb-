@@ -7,7 +7,7 @@
 
     <div class="card mb-4">
       <div class="card-body">
-        <p class="mb-0">Installierte Version: <strong>v{{ info.current }}</strong></p>
+        <p class="mb-0">Installierte Version: <strong>v{{ app_version }}</strong>{% if code and code.local %} · Stand <code>{{ code.local }}</code>{% endif %}</p>
 
         {% if running %}
           <div class="alert alert-info mt-3 mb-0">
@@ -15,6 +15,29 @@
             Ein Update läuft gerade. HerdenPilot ist dabei kurz nicht erreichbar —
             in 2–5 Minuten diese Seite neu laden.
           </div>
+
+        {% elif mode != 'exe' %}
+          {% if code.error %}
+            <div class="alert alert-secondary mb-0 mt-3">
+              <i class="bi bi-info-circle"></i> {{ code.error }}
+            </div>
+          {% elif code.update_available %}
+            <div class="alert alert-primary mt-3 mb-0">
+              <h5 class="alert-heading mb-1">🔵 {{ code.behind }} neue Änderung{{ 'en' if code.behind != 1 }} verfügbar</h5>
+              Stand <code>{{ code.local }}</code> → <code>{{ code.remote }}</code>
+              {% if code.changes %}
+              <ul class="small mb-0 mt-2">
+                {% for c in code.changes %}<li>{{ c }}</li>{% endfor %}
+                {% if code.behind > code.changes|length %}<li class="text-muted">… und {{ code.behind - code.changes|length }} weitere</li>{% endif %}
+              </ul>
+              {% endif %}
+            </div>
+          {% else %}
+            <div class="alert alert-success mb-0 mt-3">
+              <i class="bi bi-check-circle"></i>
+              Du bist auf dem neuesten Stand (<code>{{ code.local }}</code>).
+            </div>
+          {% endif %}
 
         {% elif info.error %}
           <div class="alert alert-secondary mb-0 mt-3">
@@ -87,7 +110,11 @@
           Version einfach weiter.
         </p>
         <form method="POST" action="/update/start" onsubmit="return confirm('Update jetzt starten?');">
+          {% if code and not code.update_available and not code.error %}
+          <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-repeat"></i> Trotzdem neu prüfen</button>
+          {% else %}
           <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-repeat"></i> Jetzt aktualisieren</button>
+          {% endif %}
         </form>
         <p class="small text-muted mt-2 mb-0">Geht auch per Telegram: <code>/update</code></p>
       </div>

@@ -1,0 +1,9 @@
+# Nicht ins Docker-Image kopieren
+data/
+.env
+__pycache__/
+*.pyc
+*.db
+
+# .git bewusst NICHT ausschließen — die App liest daraus ihren Code-Stand
+# für die Update-Prüfung (Einstellungen → Auf Updates prüfen, /version).

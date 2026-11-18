@@ -60,6 +60,72 @@ def check_for_update(timeout: int = 8) -> dict:
     return result
 
 
+def local_commit():
+    """Commit-Stand des laufenden Codes (aus .git, im Docker-Image mitkopiert)."""
+    gitdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".git")
+    try:
+        with open(os.path.join(gitdir, "HEAD"), encoding="utf-8") as f:
+            head = f.read().strip()
+    except OSError:
+        return None
+    if not head.startswith("ref:"):
+        return head or None
+    ref = head[4:].strip()
+    try:
+        with open(os.path.join(gitdir, ref), encoding="utf-8") as f:
+            return f.read().strip() or None
+    except OSError:
+        pass
+    try:
+        with open(os.path.join(gitdir, "packed-refs"), encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) == 2 and parts[1] == ref:
+                    return parts[0]
+    except OSError:
+        pass
+    return None
+
+
+def check_code_update(timeout: int = 8) -> dict:
+    """Pi/Server: vergleicht den laufenden Code-Stand mit GitHub (main)."""
+    result = {
+        "local": None, "remote": None, "behind": 0,
+        "changes": [], "update_available": False, "error": None,
+    }
+    local = local_commit()
+    result["local"] = local[:7] if local else None
+    headers = {"Accept": "application/vnd.github+json"}
+    try:
+        if not local:
+            r = requests.get(f"https://api.github.com/repos/{REPO}/commits/main",
+                             headers=headers, timeout=timeout)
+            if r.ok:
+                result["remote"] = r.json().get("sha", "")[:7]
+            result["error"] = "Eigener Stand unbekannt — mit „Jetzt aktualisieren“ wird er festgelegt."
+            return result
+        r = requests.get(f"https://api.github.com/repos/{REPO}/compare/{local}...main",
+                         headers=headers, timeout=timeout)
+        if r.status_code == 404:
+            result["error"] = "Eigener Stand ist auf GitHub nicht bekannt."
+            return result
+        if not r.ok:
+            result["error"] = f"GitHub nicht erreichbar (Code {r.status_code})."
+            return result
+        data = r.json()
+        commits = data.get("commits") or []
+        result["behind"] = int(data.get("ahead_by") or 0)
+        result["remote"] = commits[-1]["sha"][:7] if commits else local[:7]
+        result["changes"] = [
+            (c.get("commit", {}).get("message") or "").splitlines()[0]
+            for c in reversed(commits)
+        ][:5]
+        result["update_available"] = result["behind"] > 0
+    except Exception:
+        result["error"] = "Keine Internetverbindung — Prüfung nicht möglich."
+    return result
+
+
 def update_mode() -> str:
     """exe = Windows-exe, auto = Pi/Server mit eingerichtetem Auto-Update, manual = Server ohne."""
     if getattr(sys, "frozen", False):

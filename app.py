@@ -565,9 +565,13 @@ def spenden():
 @app.route("/update")
 @require_farm
 def update_pruefen():
-    info = updater.check_for_update()
-    return render_template("update.html", info=info, t=t,
-                           mode=updater.update_mode(),
+    mode = updater.update_mode()
+    # Windows-exe: Vergleich mit veröffentlichtem Release.
+    # Pi/Server: Vergleich des laufenden Code-Stands mit GitHub (main).
+    info = updater.check_for_update() if mode == "exe" else None
+    code = updater.check_code_update() if mode != "exe" else None
+    return render_template("update.html", info=info, code=code, t=t,
+                           mode=mode,
                            running=updater.update_running())
 
 
