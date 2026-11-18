@@ -9,7 +9,10 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - SECRET_KEY=bitte-hier-ein-langes-zufaelliges-passwort-eingeben
+      # Werte kommen aus der lokalen .env-Datei (siehe .env.example).
+      # Leer = automatisch (SECRET_KEY) bzw. kein Login (LOGIN_PASSWORD).
+      - SECRET_KEY=${SECRET_KEY:-}
+      - LOGIN_PASSWORD=${LOGIN_PASSWORD:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
