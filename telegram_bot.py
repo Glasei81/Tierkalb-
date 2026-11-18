@@ -462,11 +462,23 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     return None
 
 
+def _berlin_now_hm() -> str:
+    from datetime import datetime
+    try:
+        import pytz
+        return datetime.now(pytz.timezone("Europe/Berlin")).strftime("%H:%M")
+    except Exception:
+        return datetime.now().strftime("%H:%M")
+
+
 def send_daily_update(app):
+    now_hm = _berlin_now_hm()
     with app.app_context():
         import database as db
         for farm in db.get_all_farms():
             fid = farm["id"]
+            if (db.get_config(fid, "notify_time", "06:00") or "06:00") != now_hm:
+                continue
             upcoming  = db.get_upcoming_geburten(fid, days=14)
             tk_liste  = build_tk_liste(fid)
             impfungen = db.get_faellige_impfungen(fid)
@@ -566,9 +578,9 @@ def start_scheduler(app):
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
         scheduler = BackgroundScheduler(timezone="Europe/Berlin")
-        scheduler.add_job(send_daily_update, "cron", hour=6, minute=0, args=[app], id="daily_update", replace_existing=True)
+        scheduler.add_job(send_daily_update, "cron", minute="*", args=[app], id="daily_update", replace_existing=True)
         scheduler.start()
-        print("[Telegram] Scheduler gestartet (täglich 6:00 Uhr Europe/Berlin)")
+        print("[Telegram] Scheduler gestartet (Meldezeit je Betrieb einstellbar, Europe/Berlin)")
         t = threading.Thread(target=polling_worker, args=(app,), daemon=True)
         t.start()
         print("[Telegram] Polling-Thread gestartet")
