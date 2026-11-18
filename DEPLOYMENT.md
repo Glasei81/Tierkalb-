@@ -184,3 +184,29 @@ git pull && fly deploy
 - **Abmelden:** Oben rechts in der App → „Abmelden"
 - **Daten:** liegen auf dem Fly.io Volume, nicht auf eurem Gerät — regelmäßig CSV exportieren als Backup
 - **Ohne Passwort:** Wenn `LOGIN_PASSWORD` nicht gesetzt ist, ist die App ohne Login erreichbar (für lokalen Betrieb hinter Tailscale OK)
+
+---
+
+## Neuen Raspberry Pi einrichten (ein Befehl)
+
+Frisches Raspberry Pi OS (Lite reicht), per SSH verbinden, dann:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Glasei81/Tierkalb-/main/setup-pi.sh | bash
+```
+
+Das Skript installiert Docker, lädt HerdenPilot, startet es und richtet das automatische Update ein. Am Ende fragt es optional nach Tailscale für den Fernzugriff.
+
+## Updates per Telegram oder Knopfdruck (Raspberry Pi / Server)
+
+Auf einem bestehenden Gerät einmalig im HerdenPilot-Ordner:
+
+```bash
+git pull && sudo bash autoupdate/install-updater.sh
+```
+
+Danach:
+- **Telegram:** `/update` senden → nach 2–5 Minuten kommt „✅ Update abgeschlossen"
+- **Browser:** Einstellungen → Auf Updates prüfen → **Jetzt aktualisieren**
+
+Was im Hintergrund passiert: Die App legt im `data`-Ordner eine Update-Anforderung ab. Ein kleiner Systemdienst auf dem Pi holt den neuesten Stand (`git pull`) und baut HerdenPilot neu. Die Daten bleiben erhalten; schlägt der Neubau fehl, läuft die bisherige Version weiter und Telegram meldet den Fehler mit Auszug aus dem Protokoll (`data/update.log`).

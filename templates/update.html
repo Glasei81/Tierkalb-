@@ -9,7 +9,14 @@
       <div class="card-body">
         <p class="mb-0">Installierte Version: <strong>v{{ info.current }}</strong></p>
 
-        {% if info.error %}
+        {% if running %}
+          <div class="alert alert-info mt-3 mb-0">
+            <span class="spinner-border spinner-border-sm me-1"></span>
+            Ein Update läuft gerade. HerdenPilot ist dabei kurz nicht erreichbar —
+            in 2–5 Minuten diese Seite neu laden.
+          </div>
+
+        {% elif info.error %}
           <div class="alert alert-secondary mb-0 mt-3">
             <i class="bi bi-wifi-off"></i> {{ info.error }}<br>
             <span class="small text-muted">Du kannst jederzeit selbst nachsehen:
@@ -17,11 +24,13 @@
           </div>
 
         {% elif info.update_available %}
-          <div class="alert alert-primary mt-3">
+          <div class="alert alert-primary mt-3 {% if mode != 'exe' %}mb-0{% endif %}">
             <h5 class="alert-heading mb-1">🔵 Neue Version verfügbar: <strong>{{ info.latest }}</strong></h5>
             Deine Version <strong>v{{ info.current }}</strong> ist nicht mehr die neueste.
+            {% if mode == 'auto' %}<br>→ Unten auf <strong>„Jetzt aktualisieren"</strong> klicken.{% endif %}
           </div>
 
+          {% if mode == 'exe' %}
           <h6 class="fw-bold mt-4">✅ Einfachster Weg — mit <code>update.bat</code></h6>
           <ol class="mb-4">
             <li><strong>HerdenPilot schließen</strong> — das schwarze Fenster zumachen.
@@ -57,6 +66,7 @@
           <a href="{{ info.release_page }}" target="_blank" class="btn btn-outline-secondary">
             Änderungen ansehen
           </a>
+          {% endif %}
 
         {% else %}
           <div class="alert alert-success mb-0 mt-3">
@@ -66,6 +76,34 @@
         {% endif %}
       </div>
     </div>
+
+    {% if mode == 'auto' and not running %}
+    <div class="card mb-4">
+      <div class="card-header"><strong><i class="bi bi-cloud-arrow-down"></i> Aktualisieren</strong></div>
+      <div class="card-body">
+        <p class="small text-muted">
+          Holt den neuesten Stand und baut HerdenPilot neu. Dauer 2–5 Minuten, in der Zeit ist die App
+          kurz nicht erreichbar. Alle Daten bleiben erhalten — schlägt etwas fehl, läuft die bisherige
+          Version einfach weiter.
+        </p>
+        <form method="POST" action="/update/start" onsubmit="return confirm('Update jetzt starten?');">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-repeat"></i> Jetzt aktualisieren</button>
+        </form>
+        <p class="small text-muted mt-2 mb-0">Geht auch per Telegram: <code>/update</code></p>
+      </div>
+    </div>
+    {% elif mode == 'manual' %}
+    <div class="card mb-4">
+      <div class="card-header"><strong><i class="bi bi-terminal"></i> Aktualisieren (Server)</strong></div>
+      <div class="card-body small">
+        <p>Auf diesem Gerät ist das automatische Update nicht eingerichtet. Per SSH:</p>
+        <pre class="bg-light p-2 rounded mb-2"><code>cd ~/Tierkalb-
+git pull && docker compose up -d --build</code></pre>
+        <p class="mb-0">Einmalig einrichten für Updates per Knopfdruck und Telegram:
+          <code>sudo bash autoupdate/install-updater.sh</code></p>
+      </div>
+    </div>
+    {% endif %}
 
     <a href="/einstellungen" class="btn btn-outline-secondary">
       <i class="bi bi-arrow-left"></i> Zurück zu den Einstellungen

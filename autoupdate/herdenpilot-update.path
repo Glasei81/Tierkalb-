@@ -1,0 +1,9 @@
+[Unit]
+Description=HerdenPilot: auf Update-Anforderung warten
+
+[Path]
+PathExists=__REPO__/data/update.request
+Unit=herdenpilot-update.service
+
+[Install]
+WantedBy=multi-user.target

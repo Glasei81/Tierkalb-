@@ -1,0 +1,11 @@
+[Unit]
+Description=HerdenPilot: angefordertes Update ausführen
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+Environment=REPO_DIR=__REPO__
+ExecStart=/usr/local/bin/herdenpilot-update
+TimeoutStartSec=1800

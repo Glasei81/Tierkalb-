@@ -558,7 +558,21 @@ def spenden():
 @require_farm
 def update_pruefen():
     info = updater.check_for_update()
-    return render_template("update.html", info=info, t=t)
+    return render_template("update.html", info=info, t=t,
+                           mode=updater.update_mode(),
+                           running=updater.update_running())
+
+
+@app.route("/update/start", methods=["POST"])
+@require_farm
+def update_starten():
+    if updater.update_mode() != "auto":
+        flash("Automatisches Update ist auf diesem Gerät nicht eingerichtet.", "error")
+        return redirect(url_for("update_pruefen"))
+    if not updater.update_running():
+        updater.request_update("web")
+    flash("🔄 Update gestartet — dauert 2–5 Minuten. Danach diese Seite neu laden.", "info")
+    return redirect(url_for("update_pruefen"))
 
 
 @app.route("/einstellungen", methods=["GET", "POST"])

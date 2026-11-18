@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 
 import requests
 import updater
+import html as _html
 from datetime import date, timedelta
 
 TK_FENSTER = 7
@@ -98,6 +99,7 @@ def set_bot_commands(token: str) -> bool:
         {"command": "kosten",     "description": "Sonstige Kosten: /kosten Emma 80"},
         {"command": "hilfe",      "description": "Alle Befehle anzeigen"},
         {"command": "version",    "description": "Auf neue Version prüfen"},
+        {"command": "update",     "description": "HerdenPilot aktualisieren"},
     ]
     try:
         r = requests.post(url, json={"commands": commands}, timeout=10)
@@ -308,7 +310,7 @@ def build_tiere_message(tiere: list, farm_name: str) -> str:
 def build_hilfe_message(farm_name: str) -> str:
     return (
         f"<b>🐄 HerdenPilot — {farm_name}</b>\n\n"
-        "<b>Abfragen:</b>\n/status — Brunft, Trächtigkeit, Geburten, TK-Kontrolle\n/tiere  — Alle Tiere auflisten\n\n"
+        "<b>Abfragen:</b>\n/status — Brunft, Trächtigkeit, Geburten, TK-Kontrolle\n/tiere  — Alle Tiere auflisten\n/version — Auf neue Version prüfen\n/update  — HerdenPilot aktualisieren\n\n"
         "<b>Neues Tier anlegen:</b>\n/neues_tier Emma Rind     — Kuh namens Emma anlegen\n/neues_tier Wolke Schaf   — Schaf namens Wolke anlegen\n\n"
         "<b>Eingabe (aus dem Stall):</b>\n"
         "/besamung Emma            — Besamung heute\n/besamung Emma 85         — Besamung + 85 € Kosten\n"
@@ -318,7 +320,7 @@ def build_hilfe_message(farm_name: str) -> str:
         "<b>Trächtigkeitskontrolle:</b>\nErscheint automatisch in /status wenn die Kontrolle fällig ist.\n"
         "War die Kontrolle negativ → /brunft Emma\n\n"
         "<i>Namen können abgekürzt werden: /besamung em findet Emma</i>\n"
-        "<i>Täglich 6:00 Uhr: automatische Geburts-, TK- und Impfmeldung</i>"
+        "<i>Täglich zur eingestellten Uhrzeit: automatische Geburts-, TK- und Impfmeldung</i>"
     )
 
 
@@ -426,21 +428,83 @@ def cmd_kosten(args: list, typ: str, farm_id: str) -> str:
     return f"✅ {typ} <b>{betrag:.2f} €</b> für <b>{tier['name']}</b> eingetragen ({heute.strftime('%d.%m.%Y')})."
 
 
+def _how_to_update() -> str:
+    mode = updater.update_mode()
+    if mode == "exe":
+        return ("1. HerdenPilot schließen (das schwarze Fenster)\n"
+                "2. <code>update.bat</code> doppelklicken\n"
+                "3. Fertig — deine Daten bleiben alle erhalten")
+    if mode == "auto":
+        return "Einfach <b>/update</b> senden — der Rest läuft automatisch."
+    return ("Per SSH auf dem Gerät:\n"
+            "<code>cd ~/Tierkalb- && git pull && docker compose up -d --build</code>")
+
+
 def build_version_message() -> str:
     info = updater.check_for_update()
     if info["error"]:
-        return f"⚠️ Update-Prüfung nicht möglich:\n{info['error']}"
+        msg = f"⚠️ Update-Prüfung nicht möglich:\n{info['error']}"
+        if updater.update_mode() == "auto":
+            msg += "\n\nDen neuesten Stand holst du trotzdem jederzeit mit /update."
+        return msg
     if info["update_available"]:
         return (
             f"🔵 <b>Neue Version verfügbar: {info['latest']}</b>\n"
             f"Deine Version: v{info['current']}\n\n"
             "<b>So aktualisierst du:</b>\n"
-            "1. HerdenPilot schließen (das schwarze Fenster)\n"
-            "2. <code>update.bat</code> doppelklicken\n"
-            "3. Fertig — deine Daten bleiben alle erhalten\n\n"
+            f"{_how_to_update()}\n\n"
             f"Details: {info['release_page']}"
         )
     return f"✅ HerdenPilot v{info['current']} — du bist auf dem neuesten Stand."
+
+
+def cmd_update() -> str:
+    mode = updater.update_mode()
+    if mode == "exe":
+        return ("💻 Das ist die Windows-Version.\n"
+                "Update: HerdenPilot schließen → <code>update.bat</code> doppelklicken.")
+    if mode == "manual":
+        return ("🛠 Automatisches Update ist auf diesem Gerät nicht eingerichtet.\n\n"
+                "Per SSH:\n<code>cd ~/Tierkalb- && git pull && docker compose up -d --build</code>\n\n"
+                "Einmalig einrichten (danach geht /update):\n"
+                "<code>sudo bash autoupdate/install-updater.sh</code>")
+    if updater.update_running():
+        return "⏳ Es läuft bereits ein Update — ich melde mich, sobald es fertig ist."
+    updater.request_update("telegram")
+    return ("🔄 <b>Update gestartet.</b>\n"
+            "Dauert 2–5 Minuten, HerdenPilot ist dabei kurz nicht erreichbar.\n"
+            "Ich melde mich, sobald es fertig ist. Deine Daten bleiben erhalten.")
+
+
+def check_update_result(app):
+    try:
+        res = updater.pop_update_result()
+    except Exception as e:
+        print(f"[Update] Ergebnis lesen fehlgeschlagen: {e}")
+        return
+    if not res:
+        return
+    if res["status"] == "done":
+        if res["old"] == res["new"]:
+            text = f"✅ <b>Update geprüft</b> — HerdenPilot war bereits aktuell (Stand {res['new']})."
+        else:
+            text = (f"✅ <b>Update abgeschlossen!</b>\n"
+                    f"Stand: {res['old']} → {res['new']}\n"
+                    "Alle Daten sind erhalten.")
+    else:
+        text = ("❌ <b>Update fehlgeschlagen</b> — die bisherige Version läuft unverändert weiter.\n\n"
+                f"<code>{_html.escape(res.get('log', '')[-800:])}</code>")
+    with app.app_context():
+        import database as db
+        for farm in db.get_all_farms():
+            fid = farm["id"]
+            token   = db.get_config(fid, "telegram_token", "")
+            chat_id = db.get_config(fid, "telegram_chat_id", "")
+            if token and chat_id:
+                send_message(token, chat_id, text)
+            ntfy_topic = db.get_config(fid, "ntfy_topic", "")
+            if ntfy_topic and db.get_config(fid, "notify_ntfy", "0") == "1":
+                send_ntfy(ntfy_topic, text, db.get_config(fid, "ntfy_server", "ntfy.sh"))
 
 
 def handle_command(text: str, farm_id: str, farm_name: str):
@@ -451,7 +515,8 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     if cmd == "/status":     return build_status_message(farm_id, farm_name)
     elif cmd == "/tiere":    return build_tiere_message(db.get_alle_tiere(farm_id), farm_name)
     elif cmd in ("/hilfe", "/help", "/start"): return build_hilfe_message(farm_name)
-    elif cmd in ("/version", "/update"): return build_version_message()
+    elif cmd == "/version":    return build_version_message()
+    elif cmd == "/update":     return cmd_update()
     elif cmd == "/neues_tier": return cmd_neues_tier(args, farm_id)
     elif cmd == "/besamung":   return cmd_besamung(args, farm_id)
     elif cmd == "/brunft":     return cmd_ereignis(args, "brunft", farm_id)
@@ -579,6 +644,7 @@ def start_scheduler(app):
         from apscheduler.schedulers.background import BackgroundScheduler
         scheduler = BackgroundScheduler(timezone="Europe/Berlin")
         scheduler.add_job(send_daily_update, "cron", minute="*", args=[app], id="daily_update", replace_existing=True)
+        scheduler.add_job(check_update_result, "interval", seconds=30, args=[app], id="update_result", replace_existing=True)
         scheduler.start()
         print("[Telegram] Scheduler gestartet (Meldezeit je Betrieb einstellbar, Europe/Berlin)")
         t = threading.Thread(target=polling_worker, args=(app,), daemon=True)

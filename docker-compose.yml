@@ -13,6 +13,7 @@ services:
       # Leer = automatisch (SECRET_KEY) bzw. kein Login (LOGIN_PASSWORD).
       - SECRET_KEY=${SECRET_KEY:-}
       - LOGIN_PASSWORD=${LOGIN_PASSWORD:-}
+      - AUTO_UPDATE=${AUTO_UPDATE:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
