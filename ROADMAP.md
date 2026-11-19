@@ -169,7 +169,9 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - [ ] **Vinzenz erfasst seine Tiere von Hand** (die kommenden Tage, mit Ohrmarke)
 - [ ] **Vinzenz notiert bei seinen Kühen den Vater**, soweit bekannt (aus seinen Unterlagen). Damit lässt sich nach E15 die Vaterlinie ableiten.
 - [ ] Stammbaum der Kühe (Mutterseite) bei Vinzenz erfragen, Format klären (CSV, Excel oder PDF?)
-- [ ] Freigabe für den Bau von E15, Stufe 1
+- [ ] **Antworten auf Fragebogen 2 abwarten** (Abschnitt 7). Erst danach über E15 und die Reihenfolge entscheiden.
+- [ ] Offen zur Entscheidung: **Abstammungs-Felder vorab** (Rasse frei, Vater als eigenes Tier/Bulle/frei, Mutter, Muttervater), damit die Erst-Erfassung vollständig wird. Passt zu jeder Antwort.
+- [ ] Freigabe für den Bau von E15, Stufe 1 (nach Fragebogen 2)
 
 **Sicherheit / Aufräumen**
 - [ ] **hauspi ist per Funnel ohne Passwort öffentlich erreichbar.** Nach der Testphase: Passwort setzen (E09) oder `tailscale funnel off`
@@ -274,7 +276,29 @@ HerdenPilot nicht als Ersatz für etablierte Programme, sondern als **Zusammenf�
 - Ein **Stammbaum** lässt sich herunterladen.
 - Vinzenz erfasst seine Tiere in den kommenden Tagen von Hand und lädt testweise einen Stammbaum herunter.
 - Daraus folgt Entscheidung **E14**.
-- *Noch offen aus dem Leitfaden:* Betriebsart und Rasse, Kriterien bei der Stierwahl, bevorzugte Eingabe (Telegram/Browser). Am besten beim nächsten Gespräch klären.
+- *Noch offen aus dem Leitfaden:* Betriebsart und Rasse, Kriterien bei der Stierwahl, bevorzugte Eingabe (Telegram/Browser). → Fragebogen 2
+
+### Fragebogen 2 (verschickt 19.11.2026)
+
+*Warum:* Möglicherweise eine **seltene Rasse**, die nicht in der LfL-Liste steht. Davon hängt ab, ob E15 für Vinzenz Nutzen hat und was zuerst kommt: Inzucht-Warnung, Zuchtwerte oder Kosten.
+
+1. Welche Rasse(n)?
+2. Wofür: Milch, Fleisch/Mutterkuh, beides, oder Erhaltungszucht?
+3. Wie viele Tiere ungefähr (Kühe, Jungvieh, Stier)?
+4. Wie wird belegt: Besamung, eigener Stier (Natursprung) oder beides?
+5. Herdbuch/Zuchtverband? Gibt es Abstammungsnachweise, auf Papier oder digital?
+6. Sind Vater und Mutter der Kühe bekannt, mit Nummer?
+7. Was willst du in 2–3 Jahren aus den Daten wissen? (Inzucht vermeiden, passender Stier, Kalbeverlauf, Kosten …)
+8. Wie trägst du am liebsten ein: Telegram im Stall, Handy oder abends am PC?
+9. Was hat bisher gefehlt oder genervt?
+
+**Antworten:** *(hier eintragen)*
+
+**Was davon abhängt:**
+- Frage 1 und 5 → Nutzen von E15, Datenquelle Zuchtbuch
+- Frage 4 → Vater als eigenes Tier (Natursprung) oder als Bulle
+- Frage 2 und 7 → Reihenfolge der Auswertungen
+- Frage 8 → Telegram oder Browser zuerst ausbauen
 
 ---
 
