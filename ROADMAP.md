@@ -173,6 +173,10 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - [ ] Offen zur Entscheidung: **Abstammungs-Felder vorab** (Rasse frei, Vater als eigenes Tier/Bulle/frei, Mutter, Muttervater), damit die Erst-Erfassung vollständig wird. Passt zu jeder Antwort.
 - [ ] Freigabe für den Bau von E15, Stufe 1 (nach Fragebogen 2)
 
+**Verbesserungen**
+- [ ] **Update-Prüfung soll nur Programm-Änderungen zählen** (seit 19.11. bekannt). Bisher meldet sie auch reine Dokumentations-Commits (z. B. `ROADMAP.md`) als „neue Änderungen verfügbar“. Das verleitet zu Updates ohne Nutzen, die App ist dabei kurz weg, und der Telegram-Nutzer bekommt eine Meldung.
+  *Lösung:* Über GitHub die geänderten Dateien prüfen. Betrifft ein Commit nur `*.md` oder Dokumentation, wird er als „nur Dokumentation, kein Update nötig“ angezeigt und nicht mitgezählt. Der Knopf bleibt als „Trotzdem aktualisieren“ erhalten. Gilt für Seite und `/version`.
+
 **Sicherheit / Aufräumen**
 - [ ] **hauspi ist per Funnel ohne Passwort öffentlich erreichbar.** Nach der Testphase: Passwort setzen (E09) oder `tailscale funnel off`
 - [ ] Erstes GitHub-Release `v1.0` veröffentlichen (für exe-Download und Release-Prüfung)
