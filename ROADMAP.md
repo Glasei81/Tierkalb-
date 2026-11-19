@@ -54,6 +54,7 @@
 | 22.–24.06. | Online & Kanäle | Passwort-Login; Fly.io vorbereitet (später verworfen, E04); **Multi-Kanal-Benachrichtigungen** |
 | 28.07. | Updates I | Update-Prüfung (Browser, `/version`), `update.bat` für die exe |
 | 18.11. | Updates II & Feinschliff | Passwort aus `.env`; **Meldezeit einstellbar**; **Passwort in den Einstellungen**; **`/update` per Telegram/Knopf** + Pi-Setup-Skript; Cookie-Fix; Update-Prüfung gegen Code-Stand; `.dockerignore`; Formular-Fix Einstellungen; diese Roadmap |
+| 19.11. | Bedarfsklärung | Gespräch mit Vinzenz: keine Tierliste, Stammbaum verfügbar → E14; Testbetrieb mit Erfassung von Hand |
 
 Details zu jedem Schritt: `git log` bzw. die Commit-Liste auf GitHub.
 
@@ -117,6 +118,14 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 ### E13 — Erst Bedarf klären, dann bauen · *18.11.2026 · gilt*
 - **Warum:** Zucht-Ausbau und Import sonst an Vinzenz' tatsächlichem Bedarf vorbei → viele halbe Versionen.
 - **Nächster Schritt:** Gespräch nach [Leitfaden](#7-gesprächsleitfaden-vinzenz).
+- **Ergebnis 19.11.:** Gespräch geführt → E14.
+
+### E14 — Kein Bestandsimport; Stammbaum als erster Import-Kandidat · *19.11.2026 · gilt*
+- **Ausgangslage:** Vinzenz' Herde liegt nur analog vor, eine Tierliste gibt es nicht. Ein Stammbaum lässt sich aber herunterladen.
+- **Entscheidung:** Tiere werden **von Hand** erfasst (mit Ohrmarke). Erster Import-Kandidat ist der **Stammbaum**. Der Bestandsimport ist zurückgestellt.
+- **Warum:** Wir bauen nur, wofür es echte Daten gibt (E13). Der Stammbaum füllt sofort die Abstammung, und genau darauf baut der Zucht-Ausbau auf.
+- **Abhängigkeit:** Für den Stammbaum-Import braucht die Datenbank zuerst die Felder **Mutter, Vater und Rasse** (Zucht A). Das Format des Downloads entscheidet über den Aufwand: CSV/Excel ist gut machbar, PDF deutlich schwieriger.
+- **Rückweg:** keiner nötig, es ist bisher nichts gebaut.
 
 ---
 
@@ -136,8 +145,11 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 ## 5. Offene Punkte
 
 **Als Nächstes**
-- [ ] **Gespräch mit Vinzenz** nach [Leitfaden](#7-gesprächsleitfaden-vinzenz) — Ergebnis hier eintragen
-- [ ] hauspi aktualisieren: `cd ~/Tierkalb- && git pull && sudo bash autoupdate/install-updater.sh`
+- [x] ~~Gespräch mit Vinzenz~~, erledigt 19.11. → E14
+- [x] ~~hauspi aktualisieren~~, erledigt 19.11.
+- [ ] **Vinzenz erfasst seine Tiere von Hand** (die kommenden Tage, mit Ohrmarke)
+- [ ] **Vinzenz lädt testweise einen Stammbaum herunter**. Das Format klären (CSV, Excel oder PDF?) und eine Beispieldatei herschicken.
+- [ ] Danach: Stammbaum-Import planen. Voraussetzung sind die Felder Mutter/Vater/Rasse (Zucht A).
 
 **Sicherheit / Aufräumen**
 - [ ] **hauspi ist per Funnel ohne Passwort öffentlich erreichbar.** Nach der Testphase: Passwort setzen (E09) oder `tailscale funnel off`
@@ -145,10 +157,14 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - [ ] `templates/pro.html` entfernen — altes „Pro/Lizenz"-Template, ohne Route, widerspricht der Positionierung
 - [ ] Fly.io aus Repo und Anleitung entfernen? (E04)
 
-**Aufgenommen, wartet auf das Gespräch**
-- [ ] **Import-Funktion** — allgemein für Excel/CSV, mit Spaltenzuordnung (siehe Ideen)
-- [ ] Recherche Datenquellen Deutschland/Bayern
-- [ ] Zucht-Ausbau, Statistik-Ausbau, Layout
+**Aufgenommen, wartet auf die Stammbaum-Datei**
+- [ ] **Import-Funktion**, zuerst für den Stammbaum, allgemein mit Spaltenzuordnung (siehe Ideen)
+- [ ] Zucht A (Mutter, Vater, Rasse, Stier bei Besamung), Voraussetzung für den Import
+- [ ] Statistik-Ausbau (Zucht B), Layout
+
+**Zurückgestellt**
+- [ ] Bestandsimport. Es gibt keine Tierliste (E14).
+- [ ] Recherche Datenquellen Deutschland/Bayern. Erst nötig, wenn ein Import über den Stammbaum hinaus ansteht.
 
 ---
 
@@ -212,7 +228,12 @@ HerdenPilot nicht als Ersatz für etablierte Programme, sondern als **Zusammenf�
 7. Wie trägst du lieber ein: Telegram im Stall, Handy-Browser oder abends am PC?
 8. Gibt es eine Datei, die du ohnehin regelmäßig bekommst oder herunterlädst (Tierliste, MLP-Bericht, Abstammung)? **→ Beispiel mitbringen**, gern geschwärzt.
 
-**Ergebnis des Gesprächs:** *(hier eintragen)*
+**Ergebnis des Gesprächs (19.11.2026)**
+- Eine Tierliste gibt es nicht, die Herde ist nur **analog** erfasst.
+- Ein **Stammbaum** lässt sich herunterladen.
+- Vinzenz erfasst seine Tiere in den kommenden Tagen von Hand und lädt testweise einen Stammbaum herunter.
+- Daraus folgt Entscheidung **E14**.
+- *Noch offen aus dem Leitfaden:* Betriebsart und Rasse, Kriterien bei der Stierwahl, bevorzugte Eingabe (Telegram/Browser). Am besten beim nächsten Gespräch klären.
 
 ---
 
