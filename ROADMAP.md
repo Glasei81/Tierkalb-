@@ -54,7 +54,7 @@
 | 22.–24.06. | Online & Kanäle | Passwort-Login; Fly.io vorbereitet (später verworfen, E04); **Multi-Kanal-Benachrichtigungen** |
 | 28.07. | Updates I | Update-Prüfung (Browser, `/version`), `update.bat` für die exe |
 | 18.11. | Updates II & Feinschliff | Passwort aus `.env`; **Meldezeit einstellbar**; **Passwort in den Einstellungen**; **`/update` per Telegram/Knopf** + Pi-Setup-Skript; Cookie-Fix; Update-Prüfung gegen Code-Stand; `.dockerignore`; Formular-Fix Einstellungen; diese Roadmap |
-| 19.11. | Bedarfsklärung | Gespräch mit Vinzenz: keine Tierliste, Stammbaum verfügbar → E14; Testbetrieb mit Erfassung von Hand |
+| 19.11. | Bedarfsklärung | Gespräch mit Vinzenz: keine Tierliste, Stammbaum verfügbar → E14; Testbetrieb mit Erfassung von Hand. LfL-Bullenliste (GZL) an echten Daten geprüft → E15 |
 
 Details zu jedem Schritt: `git log` bzw. die Commit-Liste auf GitHub.
 
@@ -120,12 +120,31 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - **Nächster Schritt:** Gespräch nach [Leitfaden](#7-gesprächsleitfaden-vinzenz).
 - **Ergebnis 19.11.:** Gespräch geführt → E14.
 
-### E14 — Kein Bestandsimport; Stammbaum als erster Import-Kandidat · *19.11.2026 · gilt*
+### E14 — Kein Bestandsimport; Stammbaum als erster Import-Kandidat · *19.11.2026 · gilt, Import-Reihenfolge ersetzt durch E15*
 - **Ausgangslage:** Vinzenz' Herde liegt nur analog vor, eine Tierliste gibt es nicht. Ein Stammbaum lässt sich aber herunterladen.
 - **Entscheidung:** Tiere werden **von Hand** erfasst (mit Ohrmarke). Erster Import-Kandidat ist der **Stammbaum**. Der Bestandsimport ist zurückgestellt.
 - **Warum:** Wir bauen nur, wofür es echte Daten gibt (E13). Der Stammbaum füllt sofort die Abstammung, und genau darauf baut der Zucht-Ausbau auf.
 - **Abhängigkeit:** Für den Stammbaum-Import braucht die Datenbank zuerst die Felder **Mutter, Vater und Rasse** (Zucht A). Das Format des Downloads entscheidet über den Aufwand: CSV/Excel ist gut machbar, PDF deutlich schwieriger.
 - **Rückweg:** keiner nötig, es ist bisher nichts gebaut.
+
+### E15 — Erster Import: LfL-Bullenliste (GZL), alle Rassen · *19.11.2026 · beschlossen, noch nicht gebaut*
+- **Ausgangslage:** Die LfL Bayern veröffentlicht die **Gesamtzuchtwert-Liste (GZL)** als ZIP mit einer Excel-Datei pro Rasse (Stand der geprüften Datei: 08/2026). Enthalten sind 20.322 Bullen (Fleckvieh 13.938, Braunvieh 5.262, Grauvieh 405, Pinzgauer 298, Gelbvieh 219, Vorderwälder 200). Pro Bulle: Nummer, Name, Rasse, Geburtsjahr, **Vater und Muttervater** (Name und Nummer) sowie die Zuchtwerte mit Sicherheit.
+- **Entscheidung:**
+  - Der Nutzer lädt das ZIP **selbst** in HerdenPilot hoch. **Alle Rassen** werden geladen, ein neuer Import überschreibt über die Bullennummer, der Stand der Liste wird angezeigt.
+  - Bei der Besamung wird der Bulle **aus der Liste gewählt**, das Kalb bekommt ihn automatisch als Vater.
+  - Die **Vaterlinie** wird verfolgt, solange die Bullen in der Liste stehen.
+  - **Keine Versionshistorie** der Liste. Stattdessen ein **Schnappschuss** der wichtigsten Werte bei jeder Besamung („warum habe ich damals diesen Bullen genommen?").
+- **Warum:** Die Liste ist öffentlich und sofort verfügbar, ein Stammbaum von Vinzenz muss erst beschafft werden. Sie füllt die **Vaterseite** des Stammbaums ohne Eintippen.
+- **Geprüft an den echten Daten:** Einlesen aller Rassen in 4 s (auf dem Pi geschätzt etwa 30 s). Bei 63 % der Bullen steht der Vater selbst in der Liste, beim Muttervater sind es 45 %. Die Vaterlinie reicht im Schnitt 2,5 Generationen tief, maximal 9, zum Beispiel MILCHLUX → Milchwerk → Moser → Meter → Maestro → Mahango → Mungo → Manitoba.
+- **Zu beachten:**
+  - Jede Rassen-Datei hat **leicht andere Spalten** (z. B. „Rasse" oder „R.", Exterieurwert nur bei Braunvieh). Der Import erkennt die Spalten deshalb über die Überschrift.
+  - Die Bedeutung der Abkürzungen vor dem Anzeigen mit der **Legende der LfL** abgleichen.
+  - Die Datei kommt **nicht ins Repo**.
+- **Grenze:** Die **Mutterseite** (Mutter, Großmutter) liefert die Liste nicht. Sie stammt aus der eigenen Erfassung und später gegebenenfalls aus einem Stammbaum (E14).
+- **Bau in zwei Stufen:**
+  - Stufe 1: Import, Bullensuche bei der Besamung, Vater am Tier
+  - Stufe 2: Stammbaum-Ansicht, Schnappschuss, Verknüpfung mit der Mutter
+- **Rückweg:** Es ist noch nichts gebaut. Später: Die Bullen-Tabelle ist eigenständig, ohne sie fallen nur Suche und Vaterlinie weg, die eigenen Einträge bleiben.
 
 ---
 
@@ -148,8 +167,9 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - [x] ~~Gespräch mit Vinzenz~~, erledigt 19.11. → E14
 - [x] ~~hauspi aktualisieren~~, erledigt 19.11.
 - [ ] **Vinzenz erfasst seine Tiere von Hand** (die kommenden Tage, mit Ohrmarke)
-- [ ] **Vinzenz lädt testweise einen Stammbaum herunter**. Das Format klären (CSV, Excel oder PDF?) und eine Beispieldatei herschicken.
-- [ ] Danach: Stammbaum-Import planen. Voraussetzung sind die Felder Mutter/Vater/Rasse (Zucht A).
+- [ ] **Vinzenz notiert bei seinen Kühen den Vater**, soweit bekannt (aus seinen Unterlagen). Damit lässt sich nach E15 die Vaterlinie ableiten.
+- [ ] Stammbaum der Kühe (Mutterseite) bei Vinzenz erfragen, Format klären (CSV, Excel oder PDF?)
+- [ ] Freigabe für den Bau von E15, Stufe 1
 
 **Sicherheit / Aufräumen**
 - [ ] **hauspi ist per Funnel ohne Passwort öffentlich erreichbar.** Nach der Testphase: Passwort setzen (E09) oder `tailscale funnel off`
@@ -157,10 +177,13 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - [ ] `templates/pro.html` entfernen — altes „Pro/Lizenz"-Template, ohne Route, widerspricht der Positionierung
 - [ ] Fly.io aus Repo und Anleitung entfernen? (E04)
 
-**Aufgenommen, wartet auf die Stammbaum-Datei**
-- [ ] **Import-Funktion**, zuerst für den Stammbaum, allgemein mit Spaltenzuordnung (siehe Ideen)
-- [ ] Zucht A (Mutter, Vater, Rasse, Stier bei Besamung), Voraussetzung für den Import
-- [ ] Statistik-Ausbau (Zucht B), Layout
+**Beschlossen, wartet auf Freigabe zum Bau**
+- [ ] **E15, Stufe 1:** GZL-Import, Bullensuche bei der Besamung, Vater am Tier
+- [ ] **E15, Stufe 2:** Stammbaum-Ansicht, Schnappschuss, Mutter-Verknüpfung
+- [ ] Weitere Zucht-Erfassung (Zucht A), Statistik-Ausbau (Zucht B), Layout
+
+**Wartet auf Daten**
+- [ ] Import des Kuh-Stammbaums (Mutterseite), sobald eine Datei von Vinzenz vorliegt (E14)
 
 **Zurückgestellt**
 - [ ] Bestandsimport. Es gibt keine Tierliste (E14).
@@ -175,6 +198,7 @@ Gesammelte Ideen mit Einschätzung. Umsetzung erst nach Bedarfsklärung (E13).
 ### Import
 - **Allgemeiner Import** (Excel/CSV) mit Spaltenzuordnung — einmal „Spalte C = Ohrmarke" festlegen, wird gemerkt. Zuordnung der Tiere über die **Ohrmarke**.
 - **Bestandsliste** importieren statt Tiere einzeln anzulegen — Quelle voraussichtlich **HI-Tier** (zu prüfen).
+- **LfL-Bullenliste (GZL)**, öffentlich, alle Rassen → beschlossen als erster Import (E15).
 - **Abstammung / Zuchtwerte** vom Zuchtverband — füllt den Stammbaum sofort mehrere Generationen tief.
 - **Ordner-Überwachung:** schreibt ein Programm regelmäßig eine Datei, holt HerdenPilot sie selbst ab.
 - **Recherche (Deutschland/Bayern):** HI-Tier, LKV Bayern (Milchleistungsprüfung), RDV, regionaler Zuchtverband, Melkroboter-Hersteller (Lely, DeLaval, GEA …) — welche Exporte/Schnittstellen es gibt, in welchem Format, automatisch oder nur von Hand. Schnittstellen sind erfahrungsgemäß oft nur Vertragspartnern offen; Exportdateien sind der realistische Weg.
@@ -186,7 +210,7 @@ Gesammelte Ideen mit Einschätzung. Umsetzung erst nach Bedarfsklärung (E13).
 - Geburt: Kalb direkt anlegen — Geschlecht, Gewicht, Kalbeverlauf, lebend/tot, Zwilling
 - **Automatik:** Kalb bekommt Mutter (die Kuh) und Vater (Stier der letzten Besamung) selbst zugeordnet
 - Tier: Mutter, Vater, Rasse; beim Archivieren ein Abgangsgrund
-- Stierliste mit Vorschlägen, auch per Telegram
+- Stierliste mit Vorschlägen, auch per Telegram, gespeist aus der LfL-Liste (E15)
 
 **B — Statistik, aussagekräftig schon unter einem Jahr**
 - Erstbesamungserfolg, Besamungsindex — pro Kuh, Stier, Monat
@@ -199,6 +223,23 @@ Gesammelte Ideen mit Einschätzung. Umsetzung erst nach Bedarfsklärung (E13).
 **C — wächst über die Jahre**
 - Stammbaum je Tier; Töchter-Auswertung je Stier; Kuhfamilien
 - Zwischenkalbezeit, Erstkalbealter, Nutzungsdauer
+
+**D — Zuchtwerte der Bullen nutzen (mit E15)**
+
+*Grundsatz:* Der Zuchtwert eines Bullen ist eine **Erwartung**: was seine Nachkommen im Schnitt vererbt bekommen, mit 100 als Rassendurchschnitt. Die eigenen Einträge sind die **Wirklichkeit**. Den Wert hat der Vergleich der beiden.
+
+Sinnvoll:
+- **Erwartung gegen Wirklichkeit:** Laut Zuchtwert leichtkalbiger Bulle, und wie verliefen die Kalbungen bei uns? Dasselbe später für Fruchtbarkeit und Nutzungsdauer seiner Töchter. Mit Angabe der Datenbasis, denn bei wenigen Kalbungen pro Bulle streut das stark.
+- **Genetischer Trend der Herde:** Der Durchschnitt der Vater-Zuchtwerte nach Geburtsjahr der Kälber. Er zeigt ohne jede Messung, ob die Stierwahl die Herde voranbringt, und ist schon mit wenigen Tieren aussagekräftig.
+- **Erwartungswert eines Kalbs** (Abstammungsindex): grob die Hälfte des Vater-Zuchtwerts plus ein Viertel des Muttervater-Zuchtwerts. Das ist ausdrücklich eine **Abschätzung**, keine Zuchtwertschätzung.
+- **Hilfe bei der Stierwahl:** für Kalbinnen Bullen mit gutem Kalbeverlauf vorschlagen.
+- **Inzucht-Warnung:** Taucht derselbe Vorfahre in der Linie der Kuh und in der Linie des gewählten Bullen auf, wird gewarnt. Dafür muss die Vaterlinie verfolgt werden (E15).
+
+Nicht sinnvoll:
+- Die Werte des Bullen als **gemessene Werte** seiner Töchter eintragen. Einzeltiere streuen stark um den Durchschnitt.
+- **Eigene Zuchtwerte berechnen.** Das ist Aufgabe der offiziellen Zuchtwertschätzung und braucht Daten aus sehr vielen Betrieben.
+
+**Was am eigenen Tier zu erfassen ist** (die „Wirklichkeit"): Kalbeverlauf, Geburtsgewicht, Ergebnis der Trächtigkeitskontrolle, Brunft und Besamungen, Abgangsgrund. Später kommt die Milchleistung dazu, sobald es dafür eine Datenquelle gibt (z. B. Milchleistungsprüfung beim LKV). Das deckt sich mit Zucht A.
 
 ### Milch (sobald ein Melkstand da ist)
 - Import der Melkdaten, Verlauf je Kuh, Herdenschnitt
