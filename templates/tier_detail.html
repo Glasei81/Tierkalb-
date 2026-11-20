@@ -23,10 +23,17 @@
   </div>
 </div>
 
-{% if erwartete_geburt or naechste_brunft %}
-<div class="alert alert-success border-0 mb-4">
-  {% if erwartete_geburt %}<i class="bi bi-calendar-heart"></i> <strong>Erwartete Geburt:</strong> {{ erwartete_geburt }}{% endif %}
-  {% if naechste_brunft %}&nbsp; | &nbsp;<i class="bi bi-calendar"></i> <strong>Nächste Brunft ca.:</strong> {{ naechste_brunft }}{% endif %}
+{% if fb_ablauf and fb_ablauf.text %}
+{% set ICON = {'nachbesamen':'🔴','kontrolle':'👀','tu':'🔬','tk_fehlt':'⚠️','kalbung':'🐣','kalbung_ueberfaellig':'⚠️','brunft':'🌸'} %}
+<div class="alert {{ 'alert-danger' if fb_ablauf.status in ('nachbesamen','tk_fehlt') else 'alert-success' }} border-0 mb-4">
+  <div><i class="bi bi-heart-pulse"></i> <strong>Stand:</strong> {{ fb_ablauf.text }}</div>
+  {% if fb_termine %}
+  <ul class="mb-0 mt-2 ps-3 small">
+    {% for tm in fb_termine %}
+    <li>{{ ICON.get(tm.art, '•') }} <strong>{{ tm.datum.strftime('%d.%m.%Y') }}</strong> ({{ wann(tm) }}) — {{ tm.text }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -75,7 +82,7 @@
           <tbody>
           {% for e in ereignisse %}
           <tr>
-            <td>{% set icons = {'brunft':'🌸','besamung':'💉','geburt':'🐣','impfung':'💊','tierarzt':'🩺'} %}{{ icons.get(e.typ, '📝') }} {{ e.typ | capitalize }}</td>
+            <td>{{ EREIGNIS_LABEL.get(e.typ, '📝 ' ~ (e.typ | capitalize)) }}</td>
             <td>{{ e.datum }}</td>
             <td class="text-muted small">{{ e.notiz or '' }}</td>
             <td class="text-end">

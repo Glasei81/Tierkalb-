@@ -78,7 +78,7 @@ Das Tier erscheint jetzt auf dem Dashboard.
 
 ## 4. Ereignis eintragen
 
-Ereignisse sind alles was mit dem Tier passiert: Brunft, Besamung, Geburt, Impfung, Tierarzt, Sonstiges.
+Ereignisse sind alles was mit dem Tier passiert: Brunft, Besamung, Trächtigkeitsuntersuchung, Geburt, Tierarzt (auch Impfung), Sonstiges.
 
 **So geht’s:**
 
@@ -87,9 +87,9 @@ Ereignisse sind alles was mit dem Tier passiert: Brunft, Besamung, Geburt, Impfu
 3. **Ereignis-Typ** auswählen:
    - 🌸 **Brunft** — Tier ist stierig
    - 💉 **Besamung** — Tier wurde besamt
+   - ✅ **TU: trächtig** / ❌ **TU: nicht trächtig** — Ergebnis der Trächtigkeitsuntersuchung
    - 🐣 **Geburt** — Tier hat gekalbt / gelammt / geferkelt
-   - 💊 **Impfung** — Impfung durchgeführt
-   - 🩺 **Tierarzt** — Tierarztbesuch
+   - 🩺 **Tierarzt / Impfung** — Tierarztbesuch, Impfung (Art in die Notiz schreiben)
    - 📝 **Sonstiges** — Beliebiger Vermerk
 4. **Datum** eintragen (Standard: heute)
 5. **Notiz** hinzufügen (optional)
@@ -97,11 +97,15 @@ Ereignisse sind alles was mit dem Tier passiert: Brunft, Besamung, Geburt, Impfu
 
 **Was passiert automatisch?**
 
-- Nach einer **Besamung** berechnet die App den **erwarteten Geburtstermin**:
+- Nach einer **Besamung** stehen die nächsten Schritte als **Termine** oben im Dashboard:
+  1. **Tag 21:** auf Stierigkeit achten. Ist die Kuh wieder stierig → **Brunft** eintragen → die App meldet **„nachbesamen!"**
+  2. **Tag 28:** Trächtigkeitsuntersuchung → Ergebnis als **TU: trächtig** oder **TU: nicht trächtig** eintragen
+  3. **Trächtig:** die App zeigt den **erwarteten Kalbetermin**
+- Die Tage sind je Tierart unter **Einstellungen → Tierarten & Fristen** änderbar. Voreinstellung:
 
 | Tierart | Tragzeit |
 |---------|----------|
-| 🐄 Rinder | 280 Tage |
+| 🐄 Rinder (Fleckvieh) | 290 Tage |
 | 🐑 Schafe | 150 Tage |
 | 🐷 Schweine | 114 Tage |
 | 🐐 Ziegen | 150 Tage |
@@ -158,7 +162,7 @@ Mit Telegram kannst du alles Wichtige direkt vom Handy aus machen — auch wenn 
 
 | Befehl | Was passiert |
 |--------|---------------|
-| `/status` | Vollständiger Überblick: Brunft, Trächtigkeit, Geburten |
+| `/status` | Alle Termine: Stierigkeit, Untersuchung, Kalbung |
 | `/tiere` | Liste aller aktiven Tiere |
 | `/hilfe` | Diese Befehlsliste |
 
@@ -179,14 +183,15 @@ Verfügbare Tierarten: Rind, Schaf, Schwein, Ziege
 | `/besamung` | `/besamung Emma 24.05.` | Besamung mit Datum |
 | `/brunft` | `/brunft Bella` | Brunft heute |
 | `/geburt` | `/geburt Lisa 18.05.` | Geburt mit Datum |
-| `/impfung` | `/impfung Anna` | Impfung heute |
+| `/tk` | `/tk Emma ja` / `/tk Emma nein` | Ergebnis Trächtigkeitsuntersuchung |
+| `/impfung` | `/impfung Anna` | Impfung heute (läuft unter Tierarzt) |
 | `/tierarzt` | `/tierarzt Emma 150` | Tierarzt 150 € |
 | `/kosten` | `/kosten Emma 80` | Sonstige Kosten 80 € |
 
 **Tipps:**
 - Groß/Kleinschreibung egal: `/besamung emma` = `/besamung Emma`
 - Abkürzung reicht: `/besamung em` findet „Emma“
-- Täglich **6:00 Uhr**: automatische Meldung über bevorstehende Geburten, fällige TK-Kontrollen und Impfungen
+- Täglich zur **eingestellten Uhrzeit** (Standard 6:00): Termine von heute und den nächsten 7 Tagen
 
 ---
 

@@ -17,7 +17,8 @@ from flask import (
 import database as db
 import updater
 from werkzeug.security import generate_password_hash, check_password_hash
-from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN
+from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN, EREIGNIS_LABEL
+import fruchtbarkeit as fb
 
 
 def _resource_path(rel):
@@ -32,11 +33,13 @@ app = Flask(__name__,
 
 _EREIGNIS_KOSTEN_MAP = {
     "besamung":  "Besamung",
-    "impfung":   "Impfung",
     "tierarzt":  "Tierarzt",
     "sonstiges": "Sonstiges",
 }
 _KOSTEN_EREIGNIS_MAP = {v: k for k, v in _EREIGNIS_KOSTEN_MAP.items()}
+# Kosten einer Trächtigkeitsuntersuchung laufen als Tierarzt-Kosten
+_TU_KOSTEN_TYP = "Tierarzt"
+app.jinja_env.globals["EREIGNIS_LABEL"] = EREIGNIS_LABEL
 
 
 def _load_secret_key() -> str:
@@ -187,7 +190,8 @@ def setup():
         fid = db.create_farm(farm_name, owner_name)
         session["farm_id"] = fid
         for name, cfg in TIERARTEN.items():
-            db.upsert_tierart(fid, name, cfg["brunft"], cfg["tragzeit"], cfg["emoji"])
+            db.upsert_tierart(fid, name, cfg["brunft"], cfg["tragzeit"], cfg["emoji"], cfg.get("tk_tage"))
+        db.set_config(fid, "mig_rind_tragzeit_290", "1")
         db.set_config(fid, "lang", request.form.get("lang", "de"))
         flash("Willkommen! Farm wurde erstellt.", "success")
         return redirect(url_for("dashboard"))
@@ -200,57 +204,32 @@ def dashboard():
     fid = get_farm_id()
     farm = db.get_farm(fid)
     tiere = db.get_alle_tiere(fid)
-    upcoming = db.get_upcoming_geburten(fid, days=30)
     tier_count = db.get_tier_count(fid)
     gesamtkosten = db.get_gesamtkosten(fid)
-    impfungen_faellig = db.get_faellige_impfungen(fid)
     heute = date.today()
 
-    tiere_mit_info = []
-    brunft_faellig = []
+    abl, termine = fb.herde(tiere, db.get_ereignisse_je_tier(fid), heute)
+    gruppen = fb.gruppieren(termine, heute)
 
+    tiere_mit_info = []
     for tier in tiere:
         info = dict(tier)
-        lb = db.get_letztes_ereignis(tier["id"], fid, "besamung")
-        if lb and tier.get("tragzeit"):
-            d = date.fromisoformat(lb["datum"])
-            eb = d + timedelta(days=tier["tragzeit"])
-            info["erwartete_geburt"] = eb.strftime("%d.%m.%Y")
-            info["geburt_bald"] = (eb - heute).days <= 14
+        a = abl[tier["id"]]
+        info["fb"] = a
+        if a["kalbung"]:
+            info["erwartete_geburt"] = a["kalbung"].strftime("%d.%m.%Y")
+            info["geburt_bald"] = (a["kalbung"] - heute).days <= 14
         tiere_mit_info.append(info)
 
-        # Brunft-Warnung: nur weibliche Tiere mit bekanntem Zyklus
-        if tier.get("geschlecht") == "männlich" or not tier.get("brunft_zyklus"):
-            continue
-
-        # Trächtige ausschließen
-        lg = db.get_letztes_ereignis(tier["id"], fid, "geburt")
-        if lb:
-            bes_d = date.fromisoformat(lb["datum"])
-            traechtig = (not lg) or date.fromisoformat(lg["datum"]) < bes_d
-            if traechtig:
-                continue
-
-        lbr = db.get_letztes_ereignis(tier["id"], fid, "brunft")
-        if not lbr:
-            continue
-
-        lbr_d = date.fromisoformat(lbr["datum"])
-        naechste = lbr_d + timedelta(days=tier["brunft_zyklus"])
-        tage = (naechste - heute).days
-        if tage <= 7:
-            brunft_faellig.append({
-                "tier": tier,
-                "naechste_brunft": naechste.strftime("%d.%m.%Y"),
-                "tage": tage,
-            })
+    kalbungen_30 = sum(1 for tm in termine
+                       if tm["art"] == "kalbung" and (tm["datum"] - heute).days <= 30)
 
     return render_template("dashboard.html",
         farm=farm, tiere=tiere_mit_info,
-        upcoming=upcoming, tier_count=tier_count,
+        tier_count=tier_count,
         gesamtkosten=gesamtkosten,
-        brunft_faellig=brunft_faellig,
-        impfungen_faellig=impfungen_faellig,
+        gruppen=gruppen, kalbungen_30=kalbungen_30,
+        wann=lambda tm: fb.wann(tm, heute),
         t=t)
 
 
@@ -293,17 +272,9 @@ def tier_detail(tier_id):
     geburten_count   = sum(1 for e in ereignisse if e["typ"] == "geburt")
     besamungskosten  = sum(k["betrag"] for k in kosten if k["typ"] == "Besamung")
 
-    erwartete_geburt = None
-    lb = db.get_letztes_ereignis(tier_id, fid, "besamung")
-    if lb and tier.get("tragzeit"):
-        eb = date.fromisoformat(lb["datum"]) + timedelta(days=tier["tragzeit"])
-        erwartete_geburt = eb.strftime("%d.%m.%Y")
-
-    naechste_brunft = None
-    lbr = db.get_letztes_ereignis(tier_id, fid, "brunft")
-    if lbr and tier.get("brunft_zyklus"):
-        nb = date.fromisoformat(lbr["datum"]) + timedelta(days=tier["brunft_zyklus"])
-        naechste_brunft = nb.strftime("%d.%m.%Y")
+    heute = date.today()
+    fb_ablauf = fb.ablauf(tier, ereignisse, heute)
+    fb_termine = sorted(fb_ablauf["termine"], key=lambda tm: tm["datum"])
 
     return render_template("tier_detail.html",
         tier=tier, ereignisse=ereignisse, kosten=kosten,
@@ -311,8 +282,8 @@ def tier_detail(tier_id):
         besamungen_count=besamungen_count,
         geburten_count=geburten_count,
         besamungskosten=besamungskosten,
-        erwartete_geburt=erwartete_geburt,
-        naechste_brunft=naechste_brunft,
+        fb_ablauf=fb_ablauf, fb_termine=fb_termine,
+        wann=lambda tm: fb.wann(tm, heute),
         t=t, KOSTEN_TYPEN=KOSTEN_TYPEN, EREIGNIS_TYPEN=EREIGNIS_TYPEN)
 
 
@@ -365,13 +336,15 @@ def ereignis_neu(tier_id):
             fid, tier_id, typ, ereignis_datum,
             request.form.get("notiz", "").strip(),
         )
-        if typ in _EREIGNIS_KOSTEN_MAP:
+        kosten_typ = _EREIGNIS_KOSTEN_MAP.get(typ) or (
+            _TU_KOSTEN_TYP if typ in (fb.TK_POS, fb.TK_NEG) else None)
+        if kosten_typ:
             betrag_str = request.form.get("betrag", "").strip()
             if betrag_str:
                 try:
                     betrag = float(betrag_str.replace(",", "."))
                     if betrag > 0:
-                        db.add_kosten(fid, tier_id, _EREIGNIS_KOSTEN_MAP[typ], betrag, ereignis_datum)
+                        db.add_kosten(fid, tier_id, kosten_typ, betrag, ereignis_datum)
                 except ValueError:
                     pass
         flash("Ereignis eingetragen.", "success")
@@ -462,7 +435,7 @@ def export_csv():
     w.writerow(["Tier", "Typ", "Datum", "Notiz"])
     for tier in tiere:
         for e in db.get_ereignisse_fuer_tier(tier["id"], fid):
-            w.writerow([tier["name"], e["typ"], e["datum"], e["notiz"] or ""])
+            w.writerow([tier["name"], EREIGNIS_LABEL.get(e["typ"], e["typ"]).split(" ", 1)[-1], e["datum"], e["notiz"] or ""])
     w.writerow([])
     w.writerow(["=== KOSTEN ==="])
     w.writerow(["Tier", "Typ", "Betrag (EUR)", "Datum", "Notiz"])
@@ -545,7 +518,7 @@ def export_pdf():
             story.append(Paragraph(f"{tier.get('emoji','')}{tier['name']}", h3))
             edata = [["Typ", "Datum", "Notiz"]]
             for e in ereignisse:
-                edata.append([e["typ"].capitalize(), e["datum"], e["notiz"] or ""])
+                edata.append([EREIGNIS_LABEL.get(e["typ"], e["typ"]).split(" ", 1)[-1], e["datum"], e["notiz"] or ""])
             story.append(make_table(edata, [3.5*cm, 3*cm, 10.5*cm], colors.HexColor("#4a148c")))
             story.append(Spacer(1, 0.2*cm))
     doc.build(story)
@@ -607,6 +580,13 @@ def einstellungen():
         db.set_config(fid, "email_password", request.form.get("email_password", "").strip())
         db.set_config(fid, "email_to", request.form.get("email_to", "").strip())
         db.set_config(fid, "notify_time", request.form.get("notify_time", "06:00").strip() or "06:00")
+        for ta in db.get_tierarten(fid):
+            try:
+                werte = [int(request.form.get(f"ta_{ta['id']}_{k}", "")) for k in ("brunft", "tragzeit", "tk")]
+            except ValueError:
+                continue
+            if all(1 <= w <= 400 for w in werte):
+                db.update_tierart_fristen(fid, ta["id"], *werte)
         if not LOGIN_PASSWORD:
             if request.form.get("login_password_remove"):
                 db.set_config(fid, "login_password_hash", "")
@@ -633,6 +613,7 @@ def einstellungen():
         email_password=db.get_config(fid, "email_password", ""),
         email_to=db.get_config(fid, "email_to", ""),
         notify_time=db.get_config(fid, "notify_time", "06:00"),
+        tierarten=db.get_tierarten(fid),
         login_env_forced=bool(LOGIN_PASSWORD),
         login_pw_set=bool(db.get_config(fid, "login_password_hash", "")),
         t=t)

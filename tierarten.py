@@ -1,7 +1,9 @@
-# Tierart-Konfigurationen für HerdenPilot v3.3
+# Tierart-Konfigurationen für HerdenPilot
+# Voreinstellungen für neue Betriebe; je Betrieb in den Einstellungen änderbar.
+# Rinder: Tragzeit 290 Tage (Fleckvieh), Brunft-Kontrolle Tag 21, Trächtigkeitsuntersuchung Tag 28.
 
 TIERARTEN = {
-    "Rinder":   {"brunft": 21,   "tragzeit": 280, "tk_tage": 28, "label": "Kalben",      "emoji": "🐄"},
+    "Rinder":   {"brunft": 21,   "tragzeit": 290, "tk_tage": 28, "label": "Kalben",      "emoji": "🐄"},
     "Schafe":   {"brunft": 17,   "tragzeit": 150, "tk_tage": 20, "label": "Lammzeit",    "emoji": "🐑"},
     "Schweine": {"brunft": 21,   "tragzeit": 114, "tk_tage": 21, "label": "Abferkelung", "emoji": "🐷"},
     "Ziegen":   {"brunft": 21,   "tragzeit": 150, "tk_tage": 20, "label": "Kitzung",     "emoji": "🐐"},
@@ -12,18 +14,30 @@ KOSTEN_TYPEN = [
     "Besamung",
     "Futter",
     "Medikamente",
-    "Impfung",
     "Sonstiges",
 ]
 
 EREIGNIS_TYPEN = [
     ("brunft",    "🌸 Brunft"),
     ("besamung",  "💉 Besamung"),
+    ("tk_pos",    "✅ TU: trächtig"),
+    ("tk_neg",    "❌ TU: nicht trächtig"),
     ("geburt",    "🐣 Geburt"),
-    ("impfung",   "💊 Impfung"),
-    ("tierarzt",  "🩺 Tierarzt"),
+    ("tierarzt",  "🩺 Tierarzt / Impfung"),
     ("sonstiges", "📝 Sonstiges"),
 ]
+
+# Anzeige-Namen aller Ereignisse (auch ältere, z.B. "impfung" aus früheren Versionen)
+EREIGNIS_LABEL = {
+    "brunft":    "🌸 Brunft",
+    "besamung":  "💉 Besamung",
+    "tk_pos":    "✅ Trächtigkeitsuntersuchung: trächtig",
+    "tk_neg":    "❌ Trächtigkeitsuntersuchung: nicht trächtig",
+    "geburt":    "🐣 Geburt",
+    "tierarzt":  "🩺 Tierarzt",
+    "impfung":   "💊 Impfung",
+    "sonstiges": "📝 Sonstiges",
+}
 
 I18N = {
     "de": {

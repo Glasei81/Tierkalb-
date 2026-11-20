@@ -55,6 +55,7 @@
 | 28.07. | Updates I | Update-Prüfung (Browser, `/version`), `update.bat` für die exe |
 | 18.11. | Updates II & Feinschliff | Passwort aus `.env`; **Meldezeit einstellbar**; **Passwort in den Einstellungen**; **`/update` per Telegram/Knopf** + Pi-Setup-Skript; Cookie-Fix; Update-Prüfung gegen Code-Stand; `.dockerignore`; Formular-Fix Einstellungen; diese Roadmap |
 | 19.11. | Bedarfsklärung | Gespräch mit Vinzenz: keine Tierliste, Stammbaum verfügbar → E14; Testbetrieb mit Erfassung von Hand. LfL-Bullenliste (GZL) an echten Daten geprüft → E15 |
+| 20.11. | Fruchtbarkeits-Ablauf | Fragebogen 2 beantwortet (Fleckvieh). **Termine nach der Besamung**: Tag 21 Stierigkeit → nachbesamen, Tag 28 Trächtigkeitsuntersuchung mit Ergebnis, Kalbung nach 290 Tagen; Terminliste oben im Dashboard, in `/status` und in der Morgenmeldung; `/tk Emma ja/nein`; Fristen je Tierart in den Einstellungen; Impfung läuft unter Tierarzt (E16, E17) |
 
 Details zu jedem Schritt: `git log` bzw. die Commit-Liste auf GitHub.
 
@@ -146,6 +147,27 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
   - Stufe 2: Stammbaum-Ansicht, Schnappschuss, Verknüpfung mit der Mutter
 - **Rückweg:** Es ist noch nichts gebaut. Später: Die Bullen-Tabelle ist eigenständig, ohne sie fallen nur Suche und Vaterlinie weg, die eigenen Einträge bleiben.
 
+
+### E16 — Fruchtbarkeits-Ablauf nach der Besamung als Terminliste · *20.11.2026 · gilt*
+- **Ausgangslage:** Vinzenz' Ablauf ist: Besamung → **Tag 21** auf Stierigkeit achten (stierig = nachbesamen) → **Tag 28** Trächtigkeitsuntersuchung (TU) → trächtig: Kalbung. Die App hielt eine Kuh dagegen **sofort nach der Besamung für trächtig**. Die Kontrolle am Tag 21 fehlte, und die TU stand nur im Telegram.
+- **Entscheidung:**
+  - Neue Datei `fruchtbarkeit.py` berechnet je Kuh Stand und Termine. Dashboard, Tierseite, `/status` und Morgenmeldung nutzen dieselbe Logik.
+  - **Terminliste oben im Dashboard:** überfällig, heute, nächste 7 Tage, später.
+  - Neuer Eintrag **TU-Ergebnis** (trächtig/nicht trächtig), per Telegram `/tk Emma ja|nein`. Kosten einer TU laufen als Tierarzt-Kosten.
+  - Werte je Tierart unter **Einstellungen → Tierarten & Fristen** änderbar. Rinder: Brunftzyklus 21, TU-Tag 28, Tragzeit **290** (Fleckvieh).
+- **Regeln im Detail:**
+  - Eine Brunft frühestens 5 Tage nach der Besamung zählt als „wieder stierig“. Brunft und Besamung am selben Tag lösen also nichts aus.
+  - „Nachbesamen“ gilt 2 Tage lang, danach wird die nächste Brunft erwartet.
+  - Ist bis Tag 35 kein TU-Ergebnis da: „Ergebnis fehlt“. Ab Tag 60 ohne Ergebnis gilt die Kuh als „vermutlich trächtig“. Das ist wichtig, damit nachgetragene ältere Besamungen sinnvoll erscheinen.
+  - Nach „nicht trächtig“ läuft der Brunftrhythmus ab der Besamung weiter (z. B. Tag 42), nicht ab dem Untersuchungstag.
+- **Bestehende Daten:** Die Rinder-Tragzeit wird einmalig von 280 auf 290 umgestellt. Danach gilt der Wert aus den Einstellungen, auch nach Neustarts.
+- **Noch zu bestätigen in der Praxis:** 21/28/290 und die Fenster. Falls nötig, in den Einstellungen oder in `fruchtbarkeit.py` anpassen.
+- **Rückweg:** `git revert` des Commits. Die Datenbank bleibt verträglich: Die neue Spalte `tk_tag` wird von älteren Versionen ignoriert, TU-Einträge erscheinen dort als „Sonstiges“.
+
+### E17 — Impfung läuft unter Tierarzt, keine eigene Impf-Erinnerung · *20.11.2026 · gilt*
+- **Warum:** Wunsch von Vinzenz. Das Dashboard soll sich auf Brunft und Trächtigkeit konzentrieren (vgl. E02).
+- **Entscheidung:** „Impfung“ ist kein eigener Ereignis- und Kostentyp mehr. Sie wird als **Tierarzt** eingetragen, Details in die Notiz. `/impfung Emma` bleibt als Kurzbefehl und legt einen Tierarzt-Eintrag „Impfung“ an. Ältere Impf-Einträge bleiben sichtbar. **Die automatische Impf-Erinnerung entfällt.**
+- **Rückweg:** Die Datenbankfunktion `get_faellige_impfungen` ist noch vorhanden. Wird die Erinnerung doch gebraucht, wäre der bessere Weg ein Häkchen „Impfung“ am Tierarzt-Eintrag.
 ---
 
 ## 4. Fehler & Lehren
@@ -158,6 +180,8 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 | 18.11. | Update-Seite „aktuell", obwohl neuer Code da war | Vergleich mit Release statt Code-Stand | Pi vergleicht mit `main` (`86b044f`) | Prüfung muss zur Update-Quelle passen |
 | 18.11. | `.env` (Passwort) und `data` landeten im Docker-Image | keine `.dockerignore` | `.dockerignore` (`86b044f`) | — |
 | 18.11. | „Speichern" wirkungslos, sobald Telegram eingerichtet war | Testmeldung-Knöpfe als Formular im Formular | Knöpfe mit `formaction` (`4714d28`) | **im echten Browser klicken**, nicht nur Code lesen |
+| 20.11. | Kuh galt direkt nach der Besamung als trächtig, keine Kontrolle am Tag 21 | Vereinfachte Annahme „Besamung = trächtig“ | Fruchtbarkeits-Ablauf (E16) | Fachlichen Ablauf beim Praktiker erfragen, nicht annehmen |
+| 20.11. | Kalbetermine bei Fleckvieh ca. 10 Tage zu früh | Rinder-Tragzeit pauschal 280 Tage | 290 Tage, je Tierart einstellbar (E16) | Rassenunterschiede bei Fristen berücksichtigen |
 
 ---
 
@@ -169,9 +193,10 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - [ ] **Vinzenz erfasst seine Tiere von Hand** (die kommenden Tage, mit Ohrmarke)
 - [ ] **Vinzenz notiert bei seinen Kühen den Vater**, soweit bekannt (aus seinen Unterlagen). Damit lässt sich nach E15 die Vaterlinie ableiten.
 - [ ] Stammbaum der Kühe (Mutterseite) bei Vinzenz erfragen, Format klären (CSV, Excel oder PDF?)
-- [ ] **Antworten auf Fragebogen 2 abwarten** (Abschnitt 7). Erst danach über E15 und die Reihenfolge entscheiden.
+- [x] ~~Antworten auf Fragebogen 2~~: Fleckvieh, Ablauf 21/28 → E16, E17 (20.11.)
+- [ ] **Vinzenz testet den neuen Ablauf** am Wochenende bei der Ersterfassung. Rückmeldung: Stimmen 21/28/290 und die Fenster?
 - [ ] Offen zur Entscheidung: **Abstammungs-Felder vorab** (Rasse frei, Vater als eigenes Tier/Bulle/frei, Mutter, Muttervater), damit die Erst-Erfassung vollständig wird. Passt zu jeder Antwort.
-- [ ] Freigabe für den Bau von E15, Stufe 1 (nach Fragebogen 2)
+- [ ] Freigabe für den Bau von E15, Stufe 1. Fleckvieh steht in der LfL-Liste (13.938 Bullen), der Nutzen ist also gegeben. Am besten nach dem Wochenend-Test.
 
 **Verbesserungen**
 - [ ] **Update-Prüfung soll nur Programm-Änderungen zählen** (seit 19.11. bekannt). Bisher meldet sie auch reine Dokumentations-Commits (z. B. `ROADMAP.md`) als „neue Änderungen verfügbar“. Das verleitet zu Updates ohne Nutzen, die App ist dabei kurz weg, und der Telegram-Nutzer bekommt eine Meldung.
@@ -296,7 +321,13 @@ HerdenPilot nicht als Ersatz für etablierte Programme, sondern als **Zusammenf�
 8. Wie trägst du am liebsten ein: Telegram im Stall, Handy oder abends am PC?
 9. Was hat bisher gefehlt oder genervt?
 
-**Antworten:** *(hier eintragen)*
+**Antworten (20.11.2026, teilweise):**
+- **Rasse:** Fleckvieh → steht in der LfL-Liste, E15 ist sinnvoll
+- **Ablauf nach Besamung:** Tag 21 auf Stierigkeit achten (dann nachbesamen), Tag 28 Trächtigkeitsuntersuchung → E16
+- **Tragzeit:** 290 Tage (Fleckvieh)
+- **Impfung:** gehört zum Tierarzt, kein eigener Punkt → E17
+- **Dashboard:** Die Termine (Stierigkeit, Untersuchung, Kalbung) sind ihm wichtiger als der Rest → E16
+- *Noch offen:* Nutzung (Milch/Fleisch), Zahl der Tiere, Natursprung oder Besamung, Herdbuch, bevorzugte Eingabe
 
 **Was davon abhängt:**
 - Frage 1 und 5 → Nutzen von E15, Datenquelle Zuchtbuch

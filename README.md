@@ -9,9 +9,9 @@ HerdenPilot ist eine Web-App für Landwirte, die professionelles Herdenmanagemen
 ## Was kann HerdenPilot?
 
 ✅ **Tiere verwalten** — Name, Ohrmarke, Geburtsdatum, Geschlecht, Notizen  
-✅ **Ereignisse eintragen** — Brunft, Besamung, Geburt, Impfung, Tierarzt, Sonstiges  
+✅ **Ereignisse eintragen** — Brunft, Besamung, Trächtigkeitsuntersuchung, Geburt, Tierarzt/Impfung, Sonstiges  
 ✅ **Trächtigkeiten tracken** — Automatische Berechnung der Geburtstermine  
-✅ **Kosten dokumentieren** — Tierarzt, Futter, Besamung, Medikamente, Impfung  
+✅ **Kosten dokumentieren** — Tierarzt (inkl. Impfung), Futter, Besamung, Medikamente  
 ✅ **Statistik & Auswertung** — Charts, Kostenübersichten, Besamungsrate, Kosten pro Geburt  
 ✅ **Export** — CSV (Excel-kompatibel) + PDF-Bericht  
 ✅ **Telegram-Bot** — Status abfragen, Ereignisse eintragen — direkt aus dem Stall  
@@ -55,16 +55,17 @@ Mit dem Bot kannst du **direkt aus dem Stall** eintragen — kein Browser nötig
 
 | Befehl | Erklärung |
 |--------|----------|
-| `/status` | Brunft, Trächtigkeit, bevorstehende Geburten |
+| `/status` | Termine: Stierigkeit (Tag 21), Untersuchung (Tag 28), Kalbung |
 | `/tiere` | Liste aller aktiven Tiere |
 | `/besamung Emma` | Besamung heute eintragen |
 | `/brunft Bella` | Brunft heute eintragen |
 | `/geburt Lisa` | Geburt heute eintragen |
-| `/impfung Anna` | Impfung heute eintragen |
+| `/tk Emma ja` | Ergebnis Trächtigkeitsuntersuchung (ja / nein) |
+| `/impfung Anna` | Impfung heute eintragen (läuft unter Tierarzt) |
 | `/tierarzt Emma 150` | Tierarzt 150 € eintragen |
 | `/hilfe` | Alle Befehle |
 
-Täglich um **6:00 Uhr** kommt automatisch eine Meldung bei bevorstehenden Geburten, fälligen Trächtigkeitskontrollen und Impfungen.
+Täglich zur eingestellten Uhrzeit (Standard **6:00 Uhr**) kommt eine Meldung mit den Terminen von heute und den nächsten Tagen.
 
 ---
 
@@ -83,7 +84,7 @@ Täglich um **6:00 Uhr** kommt automatisch eine Meldung bei bevorstehenden Gebur
 
 | Tierart | Tragzeit | Brunft-Zyklus |
 |---------|----------|---------------|
-| 🐄 Rinder | 280 Tage | 21 Tage |
+| 🐄 Rinder (Fleckvieh) | 290 Tage | 21 Tage |
 | 🐑 Schafe | 150 Tage | 17 Tage |
 | 🐷 Schweine | 114 Tage | 21 Tage |
 | 🐐 Ziegen | 150 Tage | 21 Tage |

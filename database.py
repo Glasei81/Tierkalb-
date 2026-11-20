@@ -89,6 +89,24 @@ def init_db():
             conn.execute(f"ALTER TABLE tiere ADD COLUMN {col} {definition}")
         except Exception:
             pass
+    # Tag der Trächtigkeitsuntersuchung je Tierart (Rind: Tag 28)
+    try:
+        conn.execute("ALTER TABLE tierarten ADD COLUMN tk_tag INTEGER")
+    except Exception:
+        pass
+    from tierarten import TIERARTEN
+    for name, cfg in TIERARTEN.items():
+        conn.execute("UPDATE tierarten SET tk_tag = ? WHERE name = ? AND tk_tag IS NULL",
+                     (cfg.get("tk_tage"), name))
+    # Einmalig: Rinder-Tragzeit 280 → 290 Tage (Fleckvieh). Danach in den Einstellungen änderbar.
+    for (fid,) in conn.execute("SELECT id FROM farms").fetchall():
+        done = conn.execute("SELECT 1 FROM config WHERE farm_id = ? AND key = 'mig_rind_tragzeit_290'",
+                            (fid,)).fetchone()
+        if not done:
+            conn.execute("UPDATE tierarten SET tragzeit = 290 WHERE farm_id = ? AND name = 'Rinder' AND tragzeit = 280",
+                         (fid,))
+            conn.execute("INSERT OR REPLACE INTO config (farm_id, key, value) VALUES (?, 'mig_rind_tragzeit_290', '1')",
+                         (fid,))
     conn.commit()
     conn.close()
 
@@ -133,18 +151,41 @@ def get_config(farm_id, key, default=None):
     return row["value"] if row else default
 
 
-def upsert_tierart(farm_id, name, brunft, tragzeit, emoji):
+def upsert_tierart(farm_id, name, brunft, tragzeit, emoji, tk_tag=None):
     conn = get_connection()
     conn.execute("""
-        INSERT INTO tierarten (farm_id, name, brunft_zyklus, tragzeit, emoji)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO tierarten (farm_id, name, brunft_zyklus, tragzeit, emoji, tk_tag)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(farm_id, name) DO UPDATE SET
             brunft_zyklus = excluded.brunft_zyklus,
             tragzeit = excluded.tragzeit,
-            emoji = excluded.emoji
-    """, (farm_id, name, brunft, tragzeit, emoji))
+            emoji = excluded.emoji,
+            tk_tag = COALESCE(excluded.tk_tag, tierarten.tk_tag)
+    """, (farm_id, name, brunft, tragzeit, emoji, tk_tag))
     conn.commit()
     conn.close()
+
+
+def update_tierart_fristen(farm_id, tierart_id, brunft_zyklus, tragzeit, tk_tag):
+    conn = get_connection()
+    conn.execute("""
+        UPDATE tierarten SET brunft_zyklus = ?, tragzeit = ?, tk_tag = ?
+        WHERE id = ? AND farm_id = ?
+    """, (brunft_zyklus, tragzeit, tk_tag, tierart_id, farm_id))
+    conn.commit()
+    conn.close()
+
+
+def get_ereignisse_je_tier(farm_id):
+    """Alle Ereignisse eines Betriebs, gruppiert nach Tier (für die Terminliste)."""
+    conn = get_connection()
+    rows = conn.execute("SELECT tier_id, typ, datum FROM ereignisse WHERE farm_id = ?",
+                        (farm_id,)).fetchall()
+    conn.close()
+    result = {}
+    for r in rows:
+        result.setdefault(r["tier_id"], []).append({"typ": r["typ"], "datum": r["datum"]})
+    return result
 
 
 def get_tierarten(farm_id):
@@ -204,7 +245,7 @@ def get_alle_tiere(farm_id, nur_aktiv=True):
     where = "AND t.status='Aktiv'" if nur_aktiv else ""
     rows = conn.execute(f"""
         SELECT t.*, ta.name AS tierart_name,
-               ta.brunft_zyklus, ta.tragzeit, ta.emoji
+               ta.brunft_zyklus, ta.tragzeit, ta.tk_tag, ta.emoji
         FROM tiere t
         LEFT JOIN tierarten ta ON t.tierart_id = ta.id
         WHERE t.farm_id=? {where}
@@ -218,7 +259,7 @@ def get_tier_by_id(tier_id, farm_id):
     conn = get_connection()
     row = conn.execute("""
         SELECT t.*, ta.name AS tierart_name,
-               ta.brunft_zyklus, ta.tragzeit, ta.emoji
+               ta.brunft_zyklus, ta.tragzeit, ta.tk_tag, ta.emoji
         FROM tiere t
         LEFT JOIN tierarten ta ON t.tierart_id = ta.id
         WHERE t.id=? AND t.farm_id=?

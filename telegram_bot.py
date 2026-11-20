@@ -13,14 +13,7 @@ import updater
 import html as _html
 from datetime import date, timedelta
 
-TK_FENSTER = 7
-
-_TK_TAGE = {
-    "Rinder":   28,
-    "Schafe":   20,
-    "Schweine": 21,
-    "Ziegen":   20,
-}
+import fruchtbarkeit as fb
 
 
 def _strip_html(text: str) -> str:
@@ -88,14 +81,14 @@ def get_updates(token: str, offset: int = 0) -> list:
 def set_bot_commands(token: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/setMyCommands"
     commands = [
-        {"command": "status",     "description": "Brunft, Trächtigkeit, Geburten, TK-Kontrolle"},
+        {"command": "status",     "description": "Termine: Stierigkeit, Untersuchung, Kalbung"},
         {"command": "tiere",      "description": "Alle Tiere auflisten"},
         {"command": "neues_tier", "description": "Neues Tier anlegen: /neues_tier Name Tierart"},
         {"command": "besamung",   "description": "Besamung: /besamung Emma [Datum] [Kosten €]"},
         {"command": "brunft",     "description": "Brunft eintragen: /brunft Emma"},
         {"command": "geburt",     "description": "Geburt eintragen: /geburt Emma"},
-        {"command": "impfung",    "description": "Impfung eintragen: /impfung Emma"},
-        {"command": "tierarzt",   "description": "Tierarzt-Kosten: /tierarzt Emma 150"},
+        {"command": "tk",         "description": "Trächtigkeitsuntersuchung: /tk Emma ja|nein"},
+        {"command": "tierarzt",   "description": "Tierarzt/Impfung-Kosten: /tierarzt Emma 150"},
         {"command": "kosten",     "description": "Sonstige Kosten: /kosten Emma 80"},
         {"command": "hilfe",      "description": "Alle Befehle anzeigen"},
         {"command": "version",    "description": "Auf neue Version prüfen"},
@@ -142,155 +135,58 @@ def datum_parsen(datum_str: str):
     return None
 
 
-def build_tk_liste(farm_id: str) -> list:
+_ICON = {"nachbesamen": "🔴", "kontrolle": "👀", "tu": "🔬", "tk_fehlt": "⚠️",
+         "kalbung": "🐣", "kalbung_ueberfaellig": "⚠️", "brunft": "🌸"}
+_GRUPPEN_TITEL = {"ueberfaellig": "⚠️ <b>ÜBERFÄLLIG</b>", "heute": "📌 <b>HEUTE</b>",
+                  "woche": "📅 <b>NÄCHSTE 7 TAGE</b>", "spaeter": "🗓 <b>SPÄTER</b>"}
+
+
+def _termin_zeile(tm, heute) -> str:
+    name = _html.escape(tm["tier"]["name"])
+    return (f"  {_ICON.get(tm['art'], '•')} <b>{name}</b> — {tm['text']}"
+            f" · {tm['datum'].strftime('%d.%m.')}, {fb.wann(tm, heute)}")
+
+
+def _termin_bloecke(farm_id: str, heute, gruppen: list, spaeter_max: int = 6):
+    """Termine eines Betriebs als Textblöcke. Rückgabe: tiere, ablauf je Tier, Zeilen."""
     import database as db
-    heute = date.today()
     tiere = db.get_alle_tiere(farm_id)
-    result = []
-    for tier in tiere:
-        if tier.get("geschlecht") == "männlich":
+    abl, termine = fb.herde(tiere, db.get_ereignisse_je_tier(farm_id), heute)
+    g = fb.gruppieren(termine, heute)
+    lines = []
+    for key in gruppen:
+        liste = g[key]
+        if not liste:
             continue
-        if not tier.get("tragzeit"):
-            continue
-        tk_tage = _TK_TAGE.get(tier.get("tierart_name", ""), 0)
-        if not tk_tage:
-            continue
-        lb = db.get_letztes_ereignis(tier["id"], farm_id, "besamung")
-        if not lb:
-            continue
-        bes_d = date.fromisoformat(lb["datum"])
-        tage_seit = (heute - bes_d).days
-        if not (tk_tage <= tage_seit <= tk_tage + TK_FENSTER):
-            continue
-        lb_brunft = db.get_letztes_ereignis(tier["id"], farm_id, "brunft")
-        if lb_brunft and date.fromisoformat(lb_brunft["datum"]) > bes_d:
-            continue
-        lb_geburt = db.get_letztes_ereignis(tier["id"], farm_id, "geburt")
-        if lb_geburt and date.fromisoformat(lb_geburt["datum"]) > bes_d:
-            continue
-        result.append({"tier": tier, "bes_datum": bes_d, "tage_seit": tage_seit, "tk_tage": tk_tage})
-    return result
+        lines.append(_GRUPPEN_TITEL[key])
+        zeigen = liste[:spaeter_max] if key == "spaeter" else liste
+        lines += [_termin_zeile(tm, heute) for tm in zeigen]
+        if len(liste) > len(zeigen):
+            lines.append(f"  … und {len(liste) - len(zeigen)} weitere (siehe App)")
+        lines.append("")
+    return tiere, abl, lines
 
 
 def build_status_message(farm_id: str, farm_name: str) -> str:
     import database as db
     heute = date.today()
-    tiere = db.get_alle_tiere(farm_id)
+    tiere, abl, termin_zeilen = _termin_bloecke(
+        farm_id, heute, ["ueberfaellig", "heute", "woche", "spaeter"])
     lines = [f"<b>🐄 HerdenPilot — {farm_name}</b>", f"📅 {heute.strftime('%d.%m.%Y')}\n"]
+    lines += termin_zeilen or ["Keine anstehenden Termine ✅\n"]
 
-    upcoming = db.get_upcoming_geburten(farm_id, days=30)
-    if upcoming:
-        lines.append("🤰 <b>GEBURTEN BALD:</b>")
-        for u in upcoming:
-            tage = u.get("tage_bis_geburt", 0)
-            em = u.get("emoji", "🐄")
-            name = u["name"]
-            datum = u.get("erwartete_geburt_fmt", "")
-            if tage <= 0:   lines.append(f"  🔴 {em} <b>{name}</b> — heute erwartet!")
-            elif tage == 1: lines.append(f"  🟠 {em} <b>{name}</b> — morgen ({datum})")
-            elif tage <= 7: lines.append(f"  🟡 {em} {name} — in {tage} Tagen ({datum})")
-            else:           lines.append(f"  🟢 {em} {name} — in {tage} Tagen ({datum})")
-        lines.append("")
-
-    tk_liste = build_tk_liste(farm_id)
-    if tk_liste:
-        lines.append("🔬 <b>TRÄCHTIGKEITSKONTROLLE FÄLLIG:</b>")
-        for tk in tk_liste:
-            t = tk["tier"]
-            lines.append(
-                f"  🔬 {t.get('emoji','🐄')} <b>{t['name']}</b> — besamt {tk['bes_datum'].strftime('%d.%m.%Y')} ({tk['tage_seit']}d)\n"
-                f"    ↳ Trächtig? Wenn nein: /brunft {t['name']}"
-            )
-        lines.append("")
-
-    upcoming_namen = {u["name"] for u in upcoming}
-    brunft_faellig = []
-    traechtig_liste = []
-    nie_besamt = []
-
-    for tier in tiere:
-        if tier.get("geschlecht") == "männlich":
-            continue
-        if not tier.get("tragzeit"):
-            continue
-        lb  = db.get_letztes_ereignis(tier["id"], farm_id, "besamung")
-        lbr = db.get_letztes_ereignis(tier["id"], farm_id, "brunft")
-        lg  = db.get_letztes_ereignis(tier["id"], farm_id, "geburt")
-        traechtig = False
-        if lb:
-            bes_d = date.fromisoformat(lb["datum"])
-            traechtig = (not lg) or date.fromisoformat(lg["datum"]) < bes_d
-        if traechtig:
-            if tier["name"] not in upcoming_namen:
-                bes_d = date.fromisoformat(lb["datum"])
-                traechtig_liste.append({"tier": tier, "bes_datum": bes_d,
-                    "erw": bes_d + timedelta(days=tier["tragzeit"]),
-                    "tage_seit": (heute - bes_d).days})
-            continue
-        if lbr and tier.get("brunft_zyklus"):
-            lbr_d = date.fromisoformat(lbr["datum"])
-            naechste = lbr_d + timedelta(days=tier["brunft_zyklus"])
-            if (naechste - heute).days <= 7:
-                brunft_faellig.append({"tier": tier, "datum": naechste,
-                    "tage": (naechste - heute).days, "letztes_lb": lb})
-                continue
-        if not lb:
-            nie_besamt.append({"tier": tier, "letztes_lbr": lbr})
-
-    if brunft_faellig:
-        lines.append("🌸 <b>BRUNFT / STIERIG:</b>")
-        for b in brunft_faellig:
-            t = b["tier"]; tage = b["tage"]; dat = b["datum"].strftime("%d.%m.%Y"); em = t.get("emoji", "🐄"); lb = b["letztes_lb"]
-            if tage <= 0:
-                zeile = f"  🔴 {em} <b>{t['name']}</b> — <b>jetzt stierig!</b>"
-                zeile += f"\n    ↳ Besamungsfenster bis ca. {(heute + timedelta(days=2)).strftime('%d.%m.')} — Besamer anrufen!"
-            elif tage <= 3:
-                zeile = f"  🟠 {em} <b>{t['name']}</b> — in {tage} Tag(en) stierig ({dat})"
-                zeile += f"\n    ↳ ⚠️ Besamer jetzt bestellen!"
-            else:
-                zeile = f"  🟡 {em} {t['name']} — in {tage} Tagen ({dat})"
-            if lb:
-                lb_d = date.fromisoformat(lb["datum"])
-                zeile += f"\n    ↳ letzte Besamung: {lb_d.strftime('%d.%m.%Y')} ({(heute - lb_d).days}d)"
-            else:
-                zeile += "\n    ↳ noch keine Besamung"
-            lines.append(zeile)
-        lines.append("")
-
-    if traechtig_liste:
-        lines.append("✅ <b>TRÄCHTIG:</b>")
-        for b in traechtig_liste:
-            t = b["tier"]
-            lines.append(f"  🟢 {t.get('emoji','🐄')} {t['name']} — besamt {b['bes_datum'].strftime('%d.%m.%Y')} ({b['tage_seit']}d) → Geburt ca. {b['erw'].strftime('%d.%m.%Y')}")
-        lines.append("")
-
-    if nie_besamt:
-        lines.append("❓ <b>NOCH NICHT BESAMT:</b>")
-        for b in nie_besamt:
-            t = b["tier"]; lbr = b["letztes_lbr"]
-            suf = (f"letzte Brunft: {date.fromisoformat(lbr['datum']).strftime('%d.%m.%Y')}" if lbr else "noch keine Brunft eingetragen")
-            lines.append(f"  ⚪ {t.get('emoji','🐄')} {t['name']} — {suf}")
-        lines.append("")
-
-    impfungen_faellig = db.get_faellige_impfungen(farm_id)
-    if impfungen_faellig:
-        lines.append("💊 <b>IMPFUNG FÄLLIG:</b>")
-        for imp in impfungen_faellig:
-            em = imp.get("emoji", "🐄"); name = imp["name"]; letzte = imp.get("letzte_impfung")
-            if letzte:
-                lines.append(f"  💊 {em} {name} — letzte Impfung vor {int(imp.get('tage_seit_impfung') or 0)} Tagen")
-            else:
-                lines.append(f"  💊 {em} {name} — noch nie geimpft")
-        lines.append("")
-
-    mk = db.get_kosten_pro_monat(farm_id, monate=1)
+    st = [a["status"] for a in abl.values() if a["status"]]
+    unbestaetigt = st.count("traechtig_angenommen")
     lines.append("📊 <b>ÜBERSICHT:</b>")
     lines.append(f"  Tiere aktiv: {len(tiere)}")
+    lines.append(f"  Trächtig: {st.count('traechtig')}"
+                 + (f" (+{unbestaetigt} ohne Untersuchung)" if unbestaetigt else ""))
+    lines.append(f"  Besamt, Ergebnis offen: {st.count('besamt') + st.count('tk_fehlt')}")
+    lines.append(f"  Offen / nicht trächtig: {st.count('offen') + st.count('nachbesamen')}")
+    mk = db.get_kosten_pro_monat(farm_id, monate=1)
     if mk and mk[-1]["gesamt"] > 0:
         lines.append(f"  Kosten diesen Monat: {mk[-1]['gesamt']:.0f} €")
-    if not any([upcoming, tk_liste, brunft_faellig, traechtig_liste, nie_besamt, impfungen_faellig]):
-        lines.append("  Alles ruhig — keine dringenden Aktionen ✅")
-    lines.append("\n💡 Eingabe z.B.: /besamung Emma")
+    lines.append("\n💡 /besamung Emma · /brunft Emma · /tk Emma ja|nein")
     return "\n".join(lines)
 
 
@@ -310,17 +206,19 @@ def build_tiere_message(tiere: list, farm_name: str) -> str:
 def build_hilfe_message(farm_name: str) -> str:
     return (
         f"<b>🐄 HerdenPilot — {farm_name}</b>\n\n"
-        "<b>Abfragen:</b>\n/status — Brunft, Trächtigkeit, Geburten, TK-Kontrolle\n/tiere  — Alle Tiere auflisten\n/version — Auf neue Version prüfen\n/update  — HerdenPilot aktualisieren\n\n"
+        "<b>Abfragen:</b>\n/status — Termine: Stierigkeit, Untersuchung, Kalbung\n/tiere  — Alle Tiere auflisten\n/version — Auf neue Version prüfen\n/update  — HerdenPilot aktualisieren\n\n"
         "<b>Neues Tier anlegen:</b>\n/neues_tier Emma Rind     — Kuh namens Emma anlegen\n/neues_tier Wolke Schaf   — Schaf namens Wolke anlegen\n\n"
         "<b>Eingabe (aus dem Stall):</b>\n"
         "/besamung Emma            — Besamung heute\n/besamung Emma 85         — Besamung + 85 € Kosten\n"
         "/besamung Emma 24.05. 85  — Besamung mit Datum + Kosten\n/brunft Emma              — Brunft heute\n"
-        "/geburt Emma              — Geburt heute\n/impfung Emma             — Impfung heute\n"
+        "/geburt Emma              — Geburt heute\n/impfung Emma             — Impfung (läuft unter Tierarzt)\n"
         "/tierarzt Emma 150        — Tierarzt 150 €\n/kosten Emma 80           — Sonstige Kosten 80 €\n\n"
-        "<b>Trächtigkeitskontrolle:</b>\nErscheint automatisch in /status wenn die Kontrolle fällig ist.\n"
-        "War die Kontrolle negativ → /brunft Emma\n\n"
+        "<b>Nach der Besamung:</b>\n"
+        "Tag 21: auf Stierigkeit achten — stierig? → /brunft Emma, dann nachbesamen\n"
+        "Tag 28: Trächtigkeitsuntersuchung → /tk Emma ja  oder  /tk Emma nein\n"
+        "Die Termine stehen in /status und in der Morgenmeldung.\n\n"
         "<i>Namen können abgekürzt werden: /besamung em findet Emma</i>\n"
-        "<i>Täglich zur eingestellten Uhrzeit: automatische Geburts-, TK- und Impfmeldung</i>"
+        "<i>Täglich zur eingestellten Uhrzeit: Termine von heute und den nächsten Tagen</i>"
     )
 
 
@@ -369,17 +267,17 @@ def cmd_besamung(args: list, farm_id: str) -> str:
     if kosten is not None:
         db.add_kosten(farm_id, tier["id"], "Besamung", kosten, ereignis_datum.isoformat())
         antwort += f"\n💶 Kosten <b>{kosten:.2f} €</b> eingetragen."
-    if tier.get("tragzeit"):
-        erw = ereignis_datum + timedelta(days=tier["tragzeit"])
-        antwort += f"\n📅 Erwartete Geburt: <b>{erw.strftime('%d.%m.%Y')}</b>"
-    tk_tage = _TK_TAGE.get(tier.get("tierart_name", ""), 0)
-    if tk_tage:
-        tk_datum = ereignis_datum + timedelta(days=tk_tage)
-        antwort += f"\n🔬 Trächtigkeitskontrolle: ab <b>{tk_datum.strftime('%d.%m.%Y')}</b>"
+    z, tk, tz = tier.get("brunft_zyklus"), tier.get("tk_tag"), tier.get("tragzeit")
+    if z:
+        antwort += f"\n👀 Auf Stierigkeit achten: <b>{(ereignis_datum + timedelta(days=z)).strftime('%d.%m.%Y')}</b> (Tag {z})"
+    if tk:
+        antwort += f"\n🔬 Trächtigkeitsuntersuchung: <b>{(ereignis_datum + timedelta(days=tk)).strftime('%d.%m.%Y')}</b> (Tag {tk})"
+    if tz:
+        antwort += f"\n🐣 Kalbung voraussichtlich: <b>{(ereignis_datum + timedelta(days=tz)).strftime('%d.%m.%Y')}</b>"
     return antwort
 
 
-def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
+def cmd_ereignis(args: list, typ: str, farm_id: str, notiz: str = "") -> str:
     import database as db
     if not args:
         return f"❌ Bitte Tiernamen angeben. Beispiel: /{typ} Emma"
@@ -397,15 +295,73 @@ def cmd_ereignis(args: list, typ: str, farm_id: str) -> str:
         return tier_nicht_gefunden(suchname, tiere)
     if typ in ("brunft", "besamung") and tier.get("geschlecht") == "männlich":
         return f"❌ <b>{tier['name']}</b> ist männlich — {typ.capitalize()} nicht möglich."
-    db.add_ereignis(farm_id, tier["id"], typ, ereignis_datum.isoformat())
+    db.add_ereignis(farm_id, tier["id"], typ, ereignis_datum.isoformat(), notiz)
     dat_fmt = ereignis_datum.strftime("%d.%m.%Y")
-    labels = {"besamung": "💉 Besamung", "brunft": "🌸 Brunft", "geburt": "🐣 Geburt", "impfung": "💊 Impfung"}
-    label = labels.get(typ, typ.capitalize())
+    labels = {"besamung": "💉 Besamung", "brunft": "🌸 Brunft", "geburt": "🐣 Geburt", "tierarzt": "🩺 Tierarzt"}
+    label = labels.get(typ, typ.capitalize()) + (f" ({notiz})" if notiz else "")
     antwort = f"✅ {label} für <b>{tier['name']}</b> eingetragen ({dat_fmt})."
-    if typ == "brunft" and tier.get("brunft_zyklus"):
-        naechste = ereignis_datum + timedelta(days=tier["brunft_zyklus"])
-        antwort += f"\n📅 Nächste Brunft ca.: {naechste.strftime('%d.%m.%Y')}"
+    if typ == "brunft":
+        a = fb.ablauf(tier, db.get_ereignisse_fuer_tier(tier["id"], farm_id), heute)
+        if a["status"] == "nachbesamen":
+            antwort += (f"\n🔴 Besamt am {a['besamung'].strftime('%d.%m.')} — wieder stierig: <b>nachbesamen!</b>"
+                        f"\nDanach: /besamung {tier['name']}")
+        elif tier.get("brunft_zyklus"):
+            naechste = ereignis_datum + timedelta(days=tier["brunft_zyklus"])
+            antwort += f"\n📅 Nächste Brunft ca.: {naechste.strftime('%d.%m.%Y')}"
     return antwort
+
+
+_TK_JA = {"ja", "j", "+", "positiv", "pos", "trächtig", "traechtig"}
+_TK_NEIN = {"nein", "n", "-", "negativ", "neg", "leer"}
+
+
+def cmd_tk(args: list, farm_id: str) -> str:
+    """Ergebnis der Trächtigkeitsuntersuchung: /tk Emma ja|nein [Datum vor dem Ergebnis]."""
+    import database as db
+    beispiel = "Beispiel: /tk Emma ja  oder  /tk Emma nein"
+    if len(args) < 2:
+        return f"❌ Bitte Tier und Ergebnis angeben.\n{beispiel}"
+    teile = list(args)
+    erg = teile.pop().lower()
+    if erg in _TK_JA:
+        typ = fb.TK_POS
+    elif erg in _TK_NEIN:
+        typ = fb.TK_NEG
+    else:
+        return f"❌ Ergebnis bitte mit <b>ja</b> oder <b>nein</b> angeben.\n{beispiel}"
+    heute = date.today()
+    datum = heute
+    if len(teile) >= 2:
+        d = datum_parsen(teile[-1])
+        if d:
+            datum = d
+            teile.pop()
+    tiere = db.get_alle_tiere(farm_id)
+    suchname = " ".join(teile)
+    tier, mehrere = find_tier(tiere, suchname)
+    if mehrere:
+        return f"❓ Mehrere Tiere gefunden: {', '.join(t['name'] for t in mehrere)}\nBitte genauer angeben."
+    if not tier:
+        return tier_nicht_gefunden(suchname, tiere)
+    if tier.get("geschlecht") == "männlich":
+        return f"❌ <b>{tier['name']}</b> ist männlich."
+    db.add_ereignis(farm_id, tier["id"], typ, datum.isoformat())
+    a = fb.ablauf(tier, db.get_ereignisse_fuer_tier(tier["id"], farm_id), heute)
+    name = tier["name"]
+    if typ == fb.TK_POS:
+        r = f"✅ <b>{name}</b> ist trächtig (Untersuchung {datum.strftime('%d.%m.%Y')})."
+        if a["kalbung"]:
+            r += f"\n🐣 Kalbung voraussichtlich: <b>{a['kalbung'].strftime('%d.%m.%Y')}</b>"
+        if not a["besamung"]:
+            r += f"\n⚠️ Keine Besamung eingetragen — für den Kalbetermin: /besamung {name} TT.MM."
+        return r
+    r = f"❌ <b>{name}</b> ist nicht trächtig (Untersuchung {datum.strftime('%d.%m.%Y')})."
+    brunft = [tm for tm in a["termine"] if tm["art"] == "brunft"]
+    r += "\n👀 Auf Stierigkeit achten"
+    if brunft:
+        r += f", nächste Brunft ca. <b>{brunft[0]['datum'].strftime('%d.%m.%Y')}</b>"
+    r += f"\nWenn stierig: /brunft {name}, dann /besamung {name}"
+    return r
 
 
 def cmd_kosten(args: list, typ: str, farm_id: str) -> str:
@@ -541,7 +497,8 @@ def handle_command(text: str, farm_id: str, farm_name: str):
     elif cmd == "/besamung":   return cmd_besamung(args, farm_id)
     elif cmd == "/brunft":     return cmd_ereignis(args, "brunft", farm_id)
     elif cmd == "/geburt":     return cmd_ereignis(args, "geburt", farm_id)
-    elif cmd == "/impfung":    return cmd_ereignis(args, "impfung", farm_id)
+    elif cmd == "/impfung":    return cmd_ereignis(args, "tierarzt", farm_id, notiz="Impfung")
+    elif cmd == "/tk":         return cmd_tk(args, farm_id)
     elif cmd == "/tierarzt":   return cmd_kosten(args, "Tierarzt", farm_id)
     elif cmd == "/kosten":     return cmd_kosten(args, "Sonstiges", farm_id)
     return None
@@ -564,33 +521,12 @@ def send_daily_update(app):
             fid = farm["id"]
             if (db.get_config(fid, "notify_time", "06:00") or "06:00") != now_hm:
                 continue
-            upcoming  = db.get_upcoming_geburten(fid, days=14)
-            tk_liste  = build_tk_liste(fid)
-            impfungen = db.get_faellige_impfungen(fid)
-            if not upcoming and not tk_liste and not impfungen:
+            heute = date.today()
+            _, _, termin_zeilen = _termin_bloecke(fid, heute, ["ueberfaellig", "heute", "woche"])
+            if not termin_zeilen:
                 continue
-
-            lines = [f"<b>🌅 Guten Morgen! — {farm['name']}</b>"]
-            if upcoming:
-                lines.append("\nGeburten in den nächsten 14 Tagen:")
-                for u in upcoming:
-                    tage = u.get("tage_bis_geburt", 0); em = u.get("emoji", "🐄"); name = u["name"]; datum = u.get("erwartete_geburt_fmt", "")
-                    if tage <= 0:   lines.append(f"🔴 {em} <b>{name}</b> — heute!")
-                    elif tage == 1: lines.append(f"🟠 {em} <b>{name}</b> — morgen ({datum})")
-                    elif tage <= 3: lines.append(f"🟡 {em} {name} — in {tage} Tagen ({datum})")
-                    else:           lines.append(f"🟢 {em} {name} — in {tage} Tagen ({datum})")
-            if tk_liste:
-                lines.append("\n🔬 <b>Trächtigkeitskontrolle fällig:</b>")
-                for tk in tk_liste:
-                    t = tk["tier"]
-                    lines.append(f"  {t.get('emoji','🐄')} <b>{t['name']}</b> — besamt {tk['bes_datum'].strftime('%d.%m.%Y')} ({tk['tage_seit']}d)")
-            if impfungen:
-                lines.append("\n💊 <b>Impfungen fällig:</b>")
-                for imp in impfungen:
-                    em = imp.get("emoji", "🐄"); letzte = imp.get("letzte_impfung")
-                    if letzte: lines.append(f"  {em} {imp['name']} — letzte Impfung vor {int(imp.get('tage_seit_impfung') or 0)} Tagen")
-                    else:      lines.append(f"  {em} {imp['name']} — noch nie geimpft")
-            lines.append("\n💡 /status für vollständigen Überblick")
+            lines = [f"<b>🌅 Guten Morgen! — {farm['name']}</b>", ""] + termin_zeilen
+            lines.append("💡 /status für alle Termine")
             html_msg = "\n".join(lines)
 
             # Telegram

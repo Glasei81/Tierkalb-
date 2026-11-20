@@ -23,6 +23,34 @@
         </div>
       </div>
 
+      <!-- TIERARTEN & FRISTEN -->
+      <div class="card mb-4">
+        <div class="card-header green"><strong><i class="bi bi-calendar-range"></i> Tierarten &amp; Fristen</strong></div>
+        <div class="card-body">
+          <p class="text-muted small">
+            Grundlage für die Termine: Nach der Besamung wird nach <strong>einem Brunftzyklus</strong>
+            auf Stierigkeit geachtet, am <strong>TU-Tag</strong> auf Trächtigkeit untersucht,
+            nach der <strong>Tragzeit</strong> die Kalbung erwartet.
+          </p>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>Tierart</th><th>Brunftzyklus</th><th>TU-Tag</th><th>Tragzeit</th></tr></thead>
+              <tbody>
+              {% for ta in tierarten %}
+                <tr>
+                  <td class="text-nowrap">{{ ta.emoji }} {{ ta.name }}</td>
+                  <td><input type="number" min="1" max="400" name="ta_{{ ta.id }}_brunft" value="{{ ta.brunft_zyklus or '' }}" class="form-control form-control-sm" style="max-width:80px"></td>
+                  <td><input type="number" min="1" max="400" name="ta_{{ ta.id }}_tk" value="{{ ta.tk_tag or '' }}" class="form-control form-control-sm" style="max-width:80px"></td>
+                  <td><input type="number" min="1" max="400" name="ta_{{ ta.id }}_tragzeit" value="{{ ta.tragzeit or '' }}" class="form-control form-control-sm" style="max-width:90px"></td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="form-text small">Angaben in Tagen. Rinder (Fleckvieh): 21 · 28 · 290.</div>
+        </div>
+      </div>
+
       <!-- ZUGRIFFSSCHUTZ -->
       <div class="card mb-4">
         <div class="card-header green"><strong><i class="bi bi-shield-lock"></i> Zugriffsschutz</strong></div>

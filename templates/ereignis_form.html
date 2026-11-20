@@ -45,7 +45,7 @@
           <div class="mb-4">
             <label class="form-label fw-semibold">Notiz (optional)</label>
             <textarea name="notiz" class="form-control" rows="2"
-                      placeholder="z.B. Tierarzt Dr. Huber, KB-Stier Nr. ..."></textarea>
+                      placeholder="z.B. Impfung BVD, Tierarzt Dr. Huber, KB-Stier Nr. ..."></textarea>
           </div>
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
@@ -61,7 +61,7 @@
 {% endblock %}
 {% block scripts %}
 <script>
-  const MIT_KOSTEN = ['besamung', 'impfung', 'tierarzt', 'sonstiges'];
+  const MIT_KOSTEN = ['besamung', 'tierarzt', 'sonstiges', 'tk_pos', 'tk_neg'];
   const radios = document.querySelectorAll('input[name="typ"]');
   const kostenWrap = document.getElementById('kostenWrap');
   function updateKosten() {
