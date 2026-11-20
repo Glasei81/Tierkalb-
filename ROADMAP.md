@@ -146,6 +146,15 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
   - Stufe 1: Import, Bullensuche bei der Besamung, Vater am Tier
   - Stufe 2: Stammbaum-Ansicht, Schnappschuss, Verknüpfung mit der Mutter
 - **Rückweg:** Es ist noch nichts gebaut. Später: Die Bullen-Tabelle ist eigenständig, ohne sie fallen nur Suche und Vaterlinie weg, die eigenen Einträge bleiben.
+- **Ergänzung 20.11. — Vater des Kalbs automatisch:**
+  - Bei der **Geburt** fragt die App „Kalb anlegen?“. Mutter = die Kuh, Vater = Bulle der **letzten Besamung vor der Geburt** (nach einer Nachbesamung zählt die letzte).
+  - **Plausibilitäts-Check:** Liegt zwischen dieser Besamung und der Geburt nicht ungefähr die Tragzeit (± etwa 14 Tage), wird der Vater als **„unsicher, bitte prüfen“** markiert statt still übernommen.
+  - **Sonderfälle:**
+    - ohne eingetragene Besamung (Natursprung): Vater von Hand, auch ein Stier aus der eigenen Herde
+    - Zwillinge: dieselben Eltern
+    - immer von Hand korrigierbar
+  - **Übernahme vorhandener Daten:** Vinzenz schreibt den Bullen bis dahin in die **Notiz** der Besamung, möglichst mit Bullennummer. Beim Bau wird eine erkannte Nummer automatisch in das neue Feld übernommen. Ein Name allein wird nur vorgeschlagen.
+  - **Abgrenzung:** Die App leitet den Vater aus den Einträgen ab, das ist keine offizielle Abstammung. Maßgeblich bleiben Besamungsschein und Zuchtverband.
 
 
 ### E16 — Fruchtbarkeits-Ablauf nach der Besamung als Terminliste · *20.11.2026 · gilt*
