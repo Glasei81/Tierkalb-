@@ -48,7 +48,7 @@ def ablauf(tier, ereignisse, heute=None):
     tk_tag = tier.get("tk_tag") or 0
     res = {"status": None, "text": "", "termine": [],
            "besamung": None, "tag": None, "kalbung": None}
-    if tier.get("geschlecht") == "männlich" or not tragzeit:
+    if tier.get("geschlecht") == "männlich" or tier.get("kategorie") in ("kalb", "stier") or not tragzeit:
         return res
 
     ev = sorted(((e["typ"], _d(e["datum"])) for e in ereignisse if e.get("datum")),

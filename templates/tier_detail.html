@@ -5,6 +5,7 @@
 <div class="d-flex align-items-center gap-2 mb-3">
   <a href="/dashboard" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
   <h4 class="mb-0 fw-bold">{{ tier.emoji or '🐄' }} {{ tier.name }}</h4>
+  {% if tier.kategorie %}<span class="badge bg-light text-dark border">{{ KATEGORIE_NAME.get(tier.kategorie, '') }}</span>{% endif %}
   <span class="badge {{ 'bg-success' if tier.status == 'Aktiv' else 'bg-secondary' }}">{{ tier.status }}</span>
 </div>
 

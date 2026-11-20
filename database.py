@@ -89,6 +89,13 @@ def init_db():
             conn.execute(f"ALTER TABLE tiere ADD COLUMN {col} {definition}")
         except Exception:
             pass
+    # Kategorie je Tier (Kuh / Färse / Kalb / Stier). Bestehende Tiere: weiblich = Kuh, männlich = Stier.
+    try:
+        conn.execute("ALTER TABLE tiere ADD COLUMN kategorie TEXT")
+    except Exception:
+        pass
+    conn.execute("""UPDATE tiere SET kategorie = CASE WHEN geschlecht = 'männlich' THEN 'stier' ELSE 'kuh' END
+                    WHERE kategorie IS NULL""")
     # Tag der Trächtigkeitsuntersuchung je Tierart (Rind: Tag 28)
     try:
         conn.execute("ALTER TABLE tierarten ADD COLUMN tk_tag INTEGER")
@@ -197,13 +204,15 @@ def get_tierarten(farm_id):
 
 
 def add_tier(farm_id, name, ohrmarke, tierart_id, geburtsdatum=None,
-             geschlecht="weiblich", notiz=""):
+             geschlecht="weiblich", notiz="", kategorie=None):
+    from tierarten import kategorie_pruefen
     conn = get_connection()
     cur = conn.execute(
         """INSERT INTO tiere (farm_id, name, ohrmarke, tierart_id,
-           geburtsdatum, geschlecht, notiz) VALUES (?,?,?,?,?,?,?)""",
+           geburtsdatum, geschlecht, notiz, kategorie) VALUES (?,?,?,?,?,?,?,?)""",
         (farm_id, name, ohrmarke or None, tierart_id,
-         geburtsdatum or None, geschlecht, notiz or None))
+         geburtsdatum or None, geschlecht, notiz or None,
+         kategorie_pruefen(kategorie, geschlecht)))
     tier_id = cur.lastrowid
     conn.commit()
     conn.close()
@@ -211,15 +220,16 @@ def add_tier(farm_id, name, ohrmarke, tierart_id, geburtsdatum=None,
 
 
 def edit_tier(tier_id, farm_id, name, ohrmarke, tierart_id,
-              geburtsdatum, status, geschlecht, notiz):
+              geburtsdatum, status, geschlecht, notiz, kategorie=None):
+    from tierarten import kategorie_pruefen
     conn = get_connection()
     conn.execute("""
         UPDATE tiere SET name=?, ohrmarke=?, tierart_id=?,
-        geburtsdatum=?, status=?, geschlecht=?, notiz=?
+        geburtsdatum=?, status=?, geschlecht=?, notiz=?, kategorie=?
         WHERE id=? AND farm_id=?
     """, (name, ohrmarke or None, tierart_id,
           geburtsdatum or None, status, geschlecht,
-          notiz or None, tier_id, farm_id))
+          notiz or None, kategorie_pruefen(kategorie, geschlecht), tier_id, farm_id))
     conn.commit()
     conn.close()
 
@@ -269,12 +279,19 @@ def get_tier_by_id(tier_id, farm_id):
 
 
 def add_ereignis(farm_id, tier_id, typ, datum, notiz=""):
+    """Trägt ein Ereignis ein. Rückgabe True, wenn dadurch eine Färse zur Kuh wurde (erste Kalbung)."""
     conn = get_connection()
     conn.execute(
         "INSERT INTO ereignisse (farm_id, tier_id, typ, datum, notiz) VALUES (?,?,?,?,?)",
         (farm_id, tier_id, typ, datum, notiz or None))
+    zur_kuh = False
+    if typ == "geburt":
+        cur = conn.execute("UPDATE tiere SET kategorie = 'kuh' WHERE id = ? AND farm_id = ? AND kategorie = 'faerse'",
+                           (tier_id, farm_id))
+        zur_kuh = cur.rowcount > 0
     conn.commit()
     conn.close()
+    return zur_kuh
 
 
 def delete_ereignis(ereignis_id, farm_id):

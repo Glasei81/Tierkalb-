@@ -191,14 +191,21 @@ def build_status_message(farm_id: str, farm_name: str) -> str:
 
 
 def build_tiere_message(tiere: list, farm_name: str) -> str:
+    from tierarten import KATEGORIEN
     if not tiere:
         return "🐄 Noch keine Tiere eingetragen. Bitte in der App anlegen."
-    lines = [f"<b>🐄 Tiere — {farm_name}:</b>\n"]
-    for t in tiere:
-        em = t.get("emoji", "🐄"); art = t.get("tierart_name") or ""
-        oh = f" [{t['ohrmarke']}]" if t.get("ohrmarke") else ""
-        geschlecht = " (♂)" if t.get("geschlecht") == "männlich" else ""
-        lines.append(f"  {em} <b>{t['name']}</b>{oh}{geschlecht} — {art}")
+    lines = [f"<b>🐄 Tiere — {farm_name}:</b>"]
+    gruppen = [(k, f"{sym} {mehrz}") for k, _, mehrz, sym in KATEGORIEN] + [(None, "Ohne Kategorie")]
+    bekannte = {k for k, _ in gruppen if k}
+    for key, titel in gruppen:
+        liste = [t for t in tiere if (t.get("kategorie") == key if key else t.get("kategorie") not in bekannte)]
+        if not liste:
+            continue
+        lines.append(f"\n<b>{titel} ({len(liste)}):</b>")
+        for t in liste:
+            oh = f" [{t['ohrmarke']}]" if t.get("ohrmarke") else ""
+            geschlecht = " (♂)" if t.get("geschlecht") == "männlich" and key == "kalb" else ""
+            lines.append(f"  {_html.escape(t['name'])}{oh}{geschlecht}")
     lines.append("\nEingabe z.B.: /besamung Emma")
     return "\n".join(lines)
 
@@ -207,7 +214,7 @@ def build_hilfe_message(farm_name: str) -> str:
     return (
         f"<b>🐄 HerdenPilot — {farm_name}</b>\n\n"
         "<b>Abfragen:</b>\n/status — Termine: Stierigkeit, Untersuchung, Kalbung\n/tiere  — Alle Tiere auflisten\n/version — Auf neue Version prüfen\n/update  — HerdenPilot aktualisieren\n\n"
-        "<b>Neues Tier anlegen:</b>\n/neues_tier Emma Rind     — Kuh namens Emma anlegen\n/neues_tier Wolke Schaf   — Schaf namens Wolke anlegen\n\n"
+        "<b>Neues Tier anlegen:</b>\n/neues_tier Emma Kuh      — Kuh anlegen\n/neues_tier Resi Färse    — Färse anlegen\n/neues_tier Bambi Kalb    — Kalb anlegen\n/neues_tier Max Stier     — Stier anlegen\n/neues_tier Wolke Schaf   — Schaf anlegen\n\n"
         "<b>Eingabe (aus dem Stall):</b>\n"
         "/besamung Emma            — Besamung heute\n/besamung Emma 85         — Besamung + 85 € Kosten\n"
         "/besamung Emma 24.05. 85  — Besamung mit Datum + Kosten\n/brunft Emma              — Brunft heute\n"
@@ -231,14 +238,26 @@ def cmd_neues_tier(args: list, farm_id: str) -> str:
         return f"❌ Bitte Name und Tierart angeben.\nBeispiel: /neues_tier Emma Rind\n\nVerfügbare Tierarten:\n{tierart_liste}"
     tierart_suche = args[-1].lower()
     name = " ".join(args[:-1]).strip()
+    # Kuh / Färse / Kalb / Stier → Tierart Rinder mit passender Kategorie
+    rind_kat = {"kuh": ("kuh", "weiblich"), "rind": ("kuh", "weiblich"),
+                "färse": ("faerse", "weiblich"), "faerse": ("faerse", "weiblich"), "ferse": ("faerse", "weiblich"),
+                "kalbin": ("faerse", "weiblich"), "kalb": ("kalb", "weiblich"), "stier": ("stier", "männlich")}
+    kategorie, geschlecht = rind_kat.get(tierart_suche, (None, "weiblich"))
     tierart = None
-    for ta in tierarten:
-        if tierart_suche in ta["name"].lower() or ta["name"].lower().startswith(tierart_suche):
-            tierart = ta; break
+    if kategorie:
+        tierart = next((ta for ta in tierarten if ta["name"].lower().startswith("rind")), None)
     if not tierart:
-        return f"❌ Tierart '{args[-1]}' nicht gefunden.\nVerfügbare Tierarten: {tierart_liste}"
-    db.add_tier(farm_id, name, "", tierart["id"], None, "weiblich", "")
-    return f"✅ {tierart['emoji']} <b>{name}</b> wurde angelegt.\nTierart: {tierart['name']}\n📝 Ohrmarke, Geburtsdatum und Geschlecht kannst du in der App ergänzen."
+        for ta in tierarten:
+            if tierart_suche in ta["name"].lower() or ta["name"].lower().startswith(tierart_suche):
+                tierart = ta; break
+    if not tierart:
+        return (f"❌ '{args[-1]}' nicht erkannt.\nBeispiele: /neues_tier Emma Kuh · /neues_tier Resi Färse · "
+                f"/neues_tier Bambi Kalb · /neues_tier Max Stier\nTierarten: {tierart_liste}")
+    db.add_tier(farm_id, name, "", tierart["id"], None, geschlecht, "", kategorie)
+    from tierarten import KATEGORIE_NAME, kategorie_pruefen
+    kat_name = KATEGORIE_NAME[kategorie_pruefen(kategorie, geschlecht)]
+    return (f"✅ {tierart['emoji']} <b>{name}</b> wurde angelegt ({kat_name}).\n"
+            f"📝 Ohrmarke, Geburtsdatum und Geschlecht kannst du in der App ergänzen.")
 
 
 def cmd_besamung(args: list, farm_id: str) -> str:
@@ -296,11 +315,13 @@ def cmd_ereignis(args: list, typ: str, farm_id: str, notiz: str = "") -> str:
         return tier_nicht_gefunden(suchname, tiere)
     if typ in ("brunft", "besamung") and tier.get("geschlecht") == "männlich":
         return f"❌ <b>{tier['name']}</b> ist männlich — {typ.capitalize()} nicht möglich."
-    db.add_ereignis(farm_id, tier["id"], typ, ereignis_datum.isoformat(), notiz)
+    zur_kuh = db.add_ereignis(farm_id, tier["id"], typ, ereignis_datum.isoformat(), notiz)
     dat_fmt = ereignis_datum.strftime("%d.%m.%Y")
     labels = {"besamung": "💉 Besamung", "brunft": "🌸 Brunft", "geburt": "🐣 Geburt", "tierarzt": "🩺 Tierarzt"}
     label = labels.get(typ, typ.capitalize()) + (f" ({notiz})" if notiz else "")
     antwort = f"✅ {label} für <b>{tier['name']}</b> eingetragen ({dat_fmt})."
+    if zur_kuh:
+        antwort += f"\n🐄 Erste Kalbung: <b>{tier['name']}</b> steht jetzt bei den Kühen."
     if typ == "brunft":
         a = fb.ablauf(tier, db.get_ereignisse_fuer_tier(tier["id"], farm_id), heute)
         if a["status"] == "nachbesamen":

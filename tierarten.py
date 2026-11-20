@@ -9,6 +9,26 @@ TIERARTEN = {
     "Ziegen":   {"brunft": 21,   "tragzeit": 150, "tk_tage": 20, "label": "Kitzung",     "emoji": "🐐"},
 }
 
+# Kategorien innerhalb der Herde (Reiter im Dashboard)
+# (Schlüssel, Einzahl, Mehrzahl, Symbol)
+KATEGORIEN = [
+    ("kuh",    "Kuh",   "Kühe",   "🐄"),
+    ("faerse", "Färse", "Färsen", "🐮"),
+    ("kalb",   "Kalb",  "Kälber", "🍼"),
+    ("stier",  "Stier", "Stiere", "🐂"),
+]
+KATEGORIE_NAME = {k: einz for k, einz, _, _ in KATEGORIEN}
+
+
+def kategorie_pruefen(kategorie, geschlecht):
+    """Passt die Kategorie zum Geschlecht? Sonst sinnvoller Standard."""
+    maennlich = geschlecht == "männlich"
+    erlaubt = ("kalb", "stier") if maennlich else ("kuh", "faerse", "kalb")
+    if kategorie in erlaubt:
+        return kategorie
+    return "stier" if maennlich else "kuh"
+
+
 KOSTEN_TYPEN = [
     "Tierarzt",
     "Besamung",

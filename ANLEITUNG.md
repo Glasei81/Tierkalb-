@@ -78,7 +78,9 @@ Ganz oben auf dem Dashboard steht, **was bei welcher Kuh als Nächstes ansteht**
 
 Ein Tipp auf einen Termin öffnet die Kuh.
 
-Darunter siehst du die Zahlen (Tiere, Kosten, Kalbungen in 30 Tagen) und die Liste aller Tiere.
+Darunter siehst du die Zahlen (Tiere, Kosten, Kalbungen in 30 Tagen) und die Liste der Tiere. Sie ist in **Reiter** aufgeteilt:
+
+**Alle · 🐄 Kühe · 🐮 Färsen · 🍼 Kälber · 🐂 Stiere**, jeweils mit Anzahl. Die App merkt sich, welchen Reiter du zuletzt offen hattest.
 
 ---
 
@@ -129,18 +131,21 @@ Wenn die Kuh gekalbt hat: 🐣 **Geburt** eintragen. Danach ist sie wieder „of
 | **Ohrmarke** | Amtliche Nummer, z. B. DE 09 123 45678 | Empfohlen |
 | **Tierart** | Rind, Schaf, Schwein, Ziege | **Ja, für die Termine** |
 | **Geschlecht** | Weiblich / Männlich | Nein |
+| **Kategorie** | Kuh, Färse, Kalb oder Stier: bestimmt den Reiter im Dashboard | Ja (vorausgewählt) |
 | **Geburtsdatum** | Geburtstag des Tieres | Nein |
 | **Notiz** | Interne Anmerkung | Nein |
 
 3. **„Speichern“** drücken
 
 > ⚠️ **Ohne Tierart gibt es keine Termine.** Die Fristen hängen an der Tierart.
+> 🐮 **Färse = noch nicht gekalbt.** Sobald du bei einer Färse eine **Geburt** einträgst, wird sie **automatisch zur Kuh**. Kälber und Stiere wechselst du bei Bedarf von Hand (Bearbeiten → Kategorie).
+
 > 💡 **Ohrmarke eintragen lohnt sich.** Über sie lassen sich später Daten zuordnen, etwa bei einem Import.
 
 **Bearbeiten:** Tier antippen → „Bearbeiten“
 **Archivieren** (verkauft, abgegangen): Tier antippen → „Archivieren“. Die Daten bleiben erhalten.
 
-Schneller per Telegram: `/neues_tier Emma Rind`
+Schneller per Telegram: `/neues_tier Emma Kuh`, `/neues_tier Resi Färse`, `/neues_tier Bambi Kalb` oder `/neues_tier Max Stier`
 
 ---
 
@@ -185,7 +190,7 @@ Mit Telegram trägst du direkt vom Handy ein, ohne die App zu öffnen. Jeden Mor
 | Befehl | Was passiert |
 |--------|---------------|
 | `/status` | Alle Termine und eine Übersicht der Herde |
-| `/tiere` | Liste aller Tiere |
+| `/tiere` | Liste aller Tiere, nach Kühen, Färsen, Kälbern und Stieren |
 | `/hilfe` | Alle Befehle |
 
 ### Eintragen
@@ -202,7 +207,7 @@ Mit Telegram trägst du direkt vom Handy ein, ohne die App zu öffnen. Jeden Mor
 | `/impfung` | `/impfung Emma` | Impfung (wird als Tierarzt eingetragen) |
 | `/tierarzt` | `/tierarzt Emma 150` | Tierarztkosten 150 € |
 | `/kosten` | `/kosten Emma 80` | Sonstige Kosten 80 € |
-| `/neues_tier` | `/neues_tier Emma Rind` | Neues Tier anlegen |
+| `/neues_tier` | `/neues_tier Resi Färse` | Neues Tier anlegen (Kuh, Färse, Kalb oder Stier) |
 
 **Tipps:**
 
@@ -276,7 +281,7 @@ Nein. Alles ist dauerhaft gespeichert. Einfach den Link wieder öffnen.
 
 **Bei einer Kuh stehen keine Termine.**
 
-Prüfe, ob eine **Tierart** eingestellt ist (Tier → Bearbeiten) und ob die letzte **Brunft oder Besamung** eingetragen ist. Ohne diese Angaben kann die App nichts berechnen.
+Prüfe, ob eine **Tierart** eingestellt ist (Tier → Bearbeiten) und ob die letzte **Brunft oder Besamung** eingetragen ist. Ohne diese Angaben kann die App nichts berechnen. Steht das Tier unter **Kälber**, gibt es bewusst keine Besamungs-Termine. Dann die Kategorie auf **Färse** stellen.
 
 **Ich habe das falsche Untersuchungsergebnis eingetragen.**
 
@@ -293,6 +298,10 @@ Prüfe das Datum der Besamung. Grundsätzlich falsch? Die **Tragzeit** unter Ein
 **Der Telegram-Bot antwortet nicht.**
 
 Token und Chat-ID unter Einstellungen prüfen. Beim eigenen Bot einmal „Start“ gedrückt? Dann „Testmeldung senden“. Neue Einstellungen übernimmt der Bot innerhalb von etwa 5 Minuten.
+
+**Eine Kuh steht bei den Färsen (oder umgekehrt).**
+
+Tier antippen → „Bearbeiten“ → **Kategorie** ändern. Beim Update wurden alle schon eingetragenen weiblichen Rinder als Kuh eingeordnet. Deine Färsen stellst du deshalb einmal um.
 
 **Ich möchte eine Datensicherung.**
 

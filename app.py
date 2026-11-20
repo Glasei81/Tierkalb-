@@ -17,7 +17,7 @@ from flask import (
 import database as db
 import updater
 from werkzeug.security import generate_password_hash, check_password_hash
-from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN, EREIGNIS_LABEL
+from tierarten import TIERARTEN, I18N, KOSTEN_TYPEN, EREIGNIS_TYPEN, EREIGNIS_LABEL, KATEGORIEN, KATEGORIE_NAME
 import fruchtbarkeit as fb
 
 
@@ -40,6 +40,8 @@ _KOSTEN_EREIGNIS_MAP = {v: k for k, v in _EREIGNIS_KOSTEN_MAP.items()}
 # Kosten einer Trächtigkeitsuntersuchung laufen als Tierarzt-Kosten
 _TU_KOSTEN_TYP = "Tierarzt"
 app.jinja_env.globals["EREIGNIS_LABEL"] = EREIGNIS_LABEL
+app.jinja_env.globals["KATEGORIEN"] = KATEGORIEN
+app.jinja_env.globals["KATEGORIE_NAME"] = KATEGORIE_NAME
 
 
 def _load_secret_key() -> str:
@@ -221,6 +223,7 @@ def dashboard():
             info["geburt_bald"] = (a["kalbung"] - heute).days <= 14
         tiere_mit_info.append(info)
 
+    kategorie_anzahl = {k: sum(1 for t in tiere if t.get("kategorie") == k) for k, _, _, _ in KATEGORIEN}
     kalbungen_30 = sum(1 for tm in termine
                        if tm["art"] == "kalbung" and (tm["datum"] - heute).days <= 30)
 
@@ -228,7 +231,7 @@ def dashboard():
         farm=farm, tiere=tiere_mit_info,
         tier_count=tier_count,
         gesamtkosten=gesamtkosten,
-        gruppen=gruppen, kalbungen_30=kalbungen_30,
+        gruppen=gruppen, kalbungen_30=kalbungen_30, kategorie_anzahl=kategorie_anzahl,
         wann=lambda tm: fb.wann(tm, heute),
         t=t)
 
@@ -250,6 +253,7 @@ def tier_neu():
             request.form.get("geburtsdatum") or None,
             request.form.get("geschlecht", "weiblich"),
             request.form.get("notiz", "").strip(),
+            request.form.get("kategorie"),
         )
         flash(f"{name} wurde hinzugefügt.", "success")
         return redirect(url_for("dashboard"))
@@ -305,6 +309,7 @@ def tier_bearbeiten(tier_id):
             request.form.get("status", "Aktiv"),
             request.form.get("geschlecht", "weiblich"),
             request.form.get("notiz", "").strip(),
+            request.form.get("kategorie"),
         )
         flash("Änderungen gespeichert.", "success")
         return redirect(url_for("tier_detail", tier_id=tier_id))
@@ -332,10 +337,12 @@ def ereignis_neu(tier_id):
     if request.method == "POST":
         typ = request.form.get("typ", "sonstiges")
         ereignis_datum = request.form.get("datum", date.today().isoformat())
-        db.add_ereignis(
+        zur_kuh = db.add_ereignis(
             fid, tier_id, typ, ereignis_datum,
             request.form.get("notiz", "").strip(),
         )
+        if zur_kuh:
+            flash(f"🐄 {tier['name']} hat zum ersten Mal gekalbt und steht jetzt bei den Kühen.", "info")
         kosten_typ = _EREIGNIS_KOSTEN_MAP.get(typ) or (
             _TU_KOSTEN_TYP if typ in (fb.TK_POS, fb.TK_NEG) else None)
         if kosten_typ:
@@ -425,10 +432,10 @@ def export_csv():
     out = StringIO()
     w = csv.writer(out, delimiter=";")
     w.writerow(["=== TIERE ==="])
-    w.writerow(["Name", "Ohrmarke", "Tierart", "Geburtsdatum", "Geschlecht", "Status", "Notiz"])
+    w.writerow(["Name", "Ohrmarke", "Tierart", "Kategorie", "Geburtsdatum", "Geschlecht", "Status", "Notiz"])
     for tier in tiere:
         w.writerow([tier["name"], tier["ohrmarke"] or "",
-                    tier["tierart_name"] or "", tier["geburtsdatum"] or "",
+                    tier["tierart_name"] or "", KATEGORIE_NAME.get(tier.get("kategorie"), ""), tier["geburtsdatum"] or "",
                     tier.get("geschlecht") or "", tier["status"], tier.get("notiz") or ""])
     w.writerow([])
     w.writerow(["=== EREIGNISSE ==="])
@@ -491,11 +498,11 @@ def export_pdf():
     story.append(HRFlowable(width="100%", thickness=1, color=colors.grey))
     story.append(Spacer(1, 0.4*cm))
     story.append(Paragraph("Tiere", h2))
-    data = [["Name", "Ohrmarke", "Tierart", "Geburtsdatum", "Status"]]
+    data = [["Name", "Ohrmarke", "Tierart", "Kategorie", "Geburtsdatum", "Status"]]
     for tier in tiere:
         emoji = tier.get("emoji") or ""
-        data.append([tier["name"], tier["ohrmarke"] or "–", f"{emoji} {tier['tierart_name'] or '–'}", tier["geburtsdatum"] or "–", tier["status"]])
-    story.append(make_table(data, [4*cm, 3*cm, 4*cm, 3*cm, 3*cm], GREEN))
+        data.append([tier["name"], tier["ohrmarke"] or "–", f"{emoji} {tier['tierart_name'] or '–'}", KATEGORIE_NAME.get(tier.get("kategorie"), "–"), tier["geburtsdatum"] or "–", tier["status"]])
+    story.append(make_table(data, [3.6*cm, 3.2*cm, 3*cm, 2.2*cm, 2.6*cm, 2.4*cm], GREEN))
     story.append(Spacer(1, 0.4*cm))
     story.append(Paragraph("Kosten-Übersicht", h2))
     kpt = db.get_kosten_pro_tier(fid)

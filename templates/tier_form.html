@@ -25,7 +25,7 @@
               <label class="form-label">Ohrmarke</label>
               <input type="text" name="ohrmarke" class="form-control"
                      value="{{ tier.ohrmarke if tier else '' }}"
-                     placeholder="AT 123456789">
+                     placeholder="DE 09 123 45678">
             </div>
             <div class="col-md-6">
               <label class="form-label">
@@ -47,10 +47,19 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">Geschlecht</label>
-              <select name="geschlecht" class="form-select">
+              <select name="geschlecht" class="form-select" id="geschlechtSelect">
                 <option value="weiblich" {{ 'selected' if not tier or tier.get('geschlecht') == 'weiblich' }}>Weiblich</option>
                 <option value="männlich" {{ 'selected' if tier and tier.get('geschlecht') == 'männlich' }}>Männlich</option>
               </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Kategorie</label>
+              <select name="kategorie" class="form-select" id="kategorieSelect">
+                {% for key, einz, mehrz, sym in KATEGORIEN %}
+                <option value="{{ key }}" {{ 'selected' if tier and tier.get('kategorie') == key }}>{{ sym }} {{ einz }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text small">Färse = noch nicht gekalbt. Nach der ersten Geburt wird sie automatisch zur Kuh.</div>
             </div>
             <div class="col-md-6">
               <label class="form-label">Geburtsdatum</label>
@@ -87,6 +96,19 @@
 {% endblock %}
 {% block scripts %}
 <script>
+// Kategorie passend zum Geschlecht: männlich → nur Kalb / Stier, weiblich → Kuh / Färse / Kalb
+(function () {
+  const g = document.getElementById('geschlechtSelect');
+  const k = document.getElementById('kategorieSelect');
+  const ERLAUBT = { 'männlich': ['kalb', 'stier'], 'weiblich': ['kuh', 'faerse', 'kalb'] };
+  function abgleichen() {
+    const erlaubt = ERLAUBT[g.value] || ERLAUBT['weiblich'];
+    [...k.options].forEach(o => { o.hidden = !erlaubt.includes(o.value); o.disabled = o.hidden; });
+    if (!erlaubt.includes(k.value)) k.value = g.value === 'männlich' ? 'stier' : 'kuh';
+  }
+  g.addEventListener('change', abgleichen);
+  abgleichen();
+})();
 const sel = document.getElementById('tierartSelect');
 const warn = document.getElementById('tierartWarnung');
 sel.addEventListener('change', () => {

@@ -55,7 +55,7 @@
 | 28.07. | Updates I | Update-Prüfung (Browser, `/version`), `update.bat` für die exe |
 | 18.11. | Updates II & Feinschliff | Passwort aus `.env`; **Meldezeit einstellbar**; **Passwort in den Einstellungen**; **`/update` per Telegram/Knopf** + Pi-Setup-Skript; Cookie-Fix; Update-Prüfung gegen Code-Stand; `.dockerignore`; Formular-Fix Einstellungen; diese Roadmap |
 | 19.11. | Bedarfsklärung | Gespräch mit Vinzenz: keine Tierliste, Stammbaum verfügbar → E14; Testbetrieb mit Erfassung von Hand. LfL-Bullenliste (GZL) an echten Daten geprüft → E15 |
-| 20.11. | Fruchtbarkeits-Ablauf | Fragebogen 2 beantwortet (Fleckvieh). **Termine nach der Besamung**: Tag 21 Stierigkeit → nachbesamen, Tag 28 Trächtigkeitsuntersuchung mit Ergebnis, Kalbung nach 290 Tagen; Terminliste oben im Dashboard, in `/status` und in der Morgenmeldung; `/tk Emma ja/nein`; Fristen je Tierart in den Einstellungen; Impfung läuft unter Tierarzt (E16, E17). **Bedienungsanleitung in der App** (Menü → Anleitung), überarbeitet und nach Aufgaben gegliedert (E18) |
+| 20.11. | Fruchtbarkeits-Ablauf | Fragebogen 2 beantwortet (Fleckvieh). **Termine nach der Besamung**: Tag 21 Stierigkeit → nachbesamen, Tag 28 Trächtigkeitsuntersuchung mit Ergebnis, Kalbung nach 290 Tagen; Terminliste oben im Dashboard, in `/status` und in der Morgenmeldung; `/tk Emma ja/nein`; Fristen je Tierart in den Einstellungen; Impfung läuft unter Tierarzt (E16, E17). **Bedienungsanleitung in der App** (Menü → Anleitung), überarbeitet und nach Aufgaben gegliedert (E18). **Reiter Kühe · Färsen · Kälber · Stiere**, Färse wird bei der ersten Geburt automatisch Kuh (E19) |
 
 Details zu jedem Schritt: `git log` bzw. die Commit-Liste auf GitHub.
 
@@ -187,6 +187,24 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - **Technik:** Paket `markdown` mit den Erweiterungen Tabellen, `sane_lists` und Inhaltsverzeichnis. Die Anker werden wie bei GitHub gebildet, damit die Links auf beiden Seiten passen. In der Windows-exe wird `ANLEITUNG.md` mit eingepackt.
 - **Schreibregel für `ANLEITUNG.md`:** vor jeder Liste eine Leerzeile, Unterlisten mit **4 Leerzeichen** einrücken. Sonst stimmt die Darstellung in der App nicht, auch wenn GitHub sie richtig zeigt.
 - **Rückweg:** Menüpunkt und Route entfernen, die Datei bleibt.
+
+### E19 — Kategorien Kuh / Färse / Kalb / Stier mit Reitern · *20.11.2026 · gilt*
+- **Ausgangslage:** Vinzenz hat die Färsen eingetragen, die im Winter besamt werden. Sie standen mit den Kühen in einer Liste.
+- **Abstimmung mit Stefan:**
+  - Begriff **„Färsen“**
+  - **Feld und Automatik:** Kategorie am Tier. Bei einer Geburt wird eine Färse automatisch zur Kuh.
+  - Ein Kalb wechselt **nur von Hand**, ohne Altersgrenze.
+  - Eigener Reiter **„Stiere“**
+- **Umsetzung:**
+  - Neue Spalte `tiere.kategorie`. Bestehende Tiere werden beim Update eingeordnet: weiblich = Kuh, männlich = Stier. **Färsen stellt Vinzenz einmal von Hand um.**
+  - Im Formular gibt es nur passende Optionen: männlich nur Kalb oder Stier.
+  - Im Dashboard die Reiter Alle · Kühe · Färsen · Kälber · Stiere mit Anzahl. Der zuletzt gewählte Reiter bleibt im Browser gespeichert.
+  - **Färsen** bekommen dieselben Besamungs-Termine wie Kühe, **Kälber und Stiere** gar keine.
+  - Telegram: `/neues_tier Resi Färse` (auch Kuh, Kalb, Stier), `/tiere` gruppiert nach Kategorie, bei der ersten Geburt der Hinweis „steht jetzt bei den Kühen“.
+  - Kategorie auch im CSV- und PDF-Export
+- **Grenze:** Die Begriffe sind auf Rinder zugeschnitten. Bei anderen Tierarten erscheinen sie ebenfalls, solange nur Rinder genutzt werden, ist das unkritisch.
+- **Lehre:** Die globale Menüfarbe (weiß) hat die Reiter-Beschriftung unsichtbar gemacht. Erst im Bildschirmfoto aufgefallen, deshalb eigene Farbe für die Reiter.
+- **Rückweg:** `git revert`. Die Spalte `kategorie` wird von älteren Versionen ignoriert.
 ---
 
 ## 4. Fehler & Lehren
