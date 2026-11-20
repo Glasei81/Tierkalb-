@@ -25,6 +25,7 @@ jobs:
           pyinstaller --noconfirm --onefile --name HerdenPilot
           --add-data "templates;templates"
           --add-data "static;static"
+          --add-data "ANLEITUNG.md;."
           desktop.py
 
       - name: exe als Artifact hochladen

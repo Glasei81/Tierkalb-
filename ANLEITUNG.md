@@ -1,6 +1,6 @@
 # HerdenPilot — Bedienungsanleitung
 
-**Für den täglichen Gebrauch am Betrieb**
+**Für den täglichen Gebrauch am Betrieb.** Diese Anleitung findest du auch in der App: Menü → **Anleitung**.
 
 ---
 
@@ -8,212 +8,295 @@
 
 1. [App öffnen](#1-app-öffnen)
 2. [Erste Einrichtung](#2-erste-einrichtung)
-3. [Tier anlegen](#3-tier-anlegen)
-4. [Ereignis eintragen](#4-ereignis-eintragen)
-5. [Kosten eintragen](#5-kosten-eintragen)
-6. [Statistik & Auswertung](#6-statistik--auswertung)
-7. [Export: CSV & PDF](#7-export-csv--pdf)
-8. [Telegram-Befehle](#8-telegram-befehle)
-9. [Häufige Fragen](#9-häufige-fragen)
+3. [Das Dashboard: deine Termine](#3-das-dashboard-deine-termine)
+4. [Kuh wurde besamt – was jetzt?](#4-kuh-wurde-besamt--was-jetzt)
+5. [Tier anlegen](#5-tier-anlegen)
+6. [Ereignis eintragen](#6-ereignis-eintragen)
+7. [Kosten eintragen](#7-kosten-eintragen)
+8. [Telegram: alles vom Stall aus](#8-telegram-alles-vom-stall-aus)
+9. [Einstellungen](#9-einstellungen)
+10. [Statistik und Export](#10-statistik-und-export)
+11. [Updates](#11-updates)
+12. [Häufige Fragen](#12-häufige-fragen)
 
 ---
 
 ## 1. App öffnen
 
-Die App läuft im Browser — wie eine normale Webseite.
-Du brauchst **keine Installation**, kein App-Store.
+HerdenPilot läuft im Browser, wie eine normale Webseite. Du brauchst **keine Installation** und keinen App-Store.
 
-**Am Handy oder Computer:**
-Den Link im Browser öffnen (du hast ihn per WhatsApp o. ä. bekommen).
+**Am Handy oder Computer:** den Link öffnen, den du bekommen hast.
 
-**Tipp — App auf dem Handy-Startbildschirm installieren:**
-- iPhone: Safari → Teilen-Symbol → „Zum Home-Bildschirm“
+**Tipp: App auf den Startbildschirm legen**
+
+- iPhone/iPad: Safari → Teilen-Symbol → „Zum Home-Bildschirm“
 - Android: Chrome → Menü (⋮) → „Zum Startbildschirm hinzufügen“
 
-Danach hast du ein Symbol wie eine echte App und kannst sie wie gewöhnt tippen.
+Danach hast du ein Symbol wie bei einer echten App.
+
+Ist ein **Passwort** eingerichtet, fragt die App beim Öffnen danach. Abmelden kannst du oben im Menü.
 
 ---
 
 ## 2. Erste Einrichtung
 
-Beim allerersten Öffnen erscheint der **Einrichtungs-Assistent**.
+Beim allerersten Öffnen erscheint der **Einrichtungs-Assistent**:
 
-1. **Betriebsname** eingeben (z. B. „Hof Mustermann“)
+1. **Betriebsname** eingeben (z. B. „Hof Huber“)
 2. **Deinen Namen** eingeben (optional)
-3. **Sprache** wählen: Deutsch oder Englisch
-4. Auf **„Betrieb erstellen“** drücken
+3. **Sprache** wählen
+4. **„Betrieb erstellen“** drücken
 
-Die Tierarten sind bereits voreingestellt: Rinder, Schafe, Schweine und Ziegen.
+Die Tierarten Rinder, Schafe, Schweine und Ziegen sind schon angelegt, mit passenden Fristen (siehe [Einstellungen](#9-einstellungen)).
 
-**Fertig** — du bist auf dem Dashboard.
+**Danach:** Tiere anlegen und bei jeder Kuh die **letzte Brunft oder Besamung** eintragen. Erst dann kann die App Termine berechnen.
 
 ---
 
-## 3. Tier anlegen
+## 3. Das Dashboard: deine Termine
 
-**So geht’s:**
+Ganz oben auf dem Dashboard steht, **was bei welcher Kuh als Nächstes ansteht**. Sortiert ist nach Dringlichkeit:
 
-1. Auf dem Dashboard oben rechts auf **„+ Neues Tier“** drücken
+| Bereich | Bedeutung |
+|---|---|
+| ⚠️ **Überfällig** | Hätte schon erledigt sein sollen |
+| 📌 **Heute** | Heute dran |
+| 📅 **Nächste 7 Tage** | Kommt diese Woche |
+| 🗓 **Später** | Weiter in der Zukunft, z. B. Kalbungen |
+
+**Was die Zeichen bedeuten:**
+
+| Zeichen | Termin | Was du tust |
+|---|---|---|
+| 🔴 | **wieder stierig: nachbesamen!** | Besamer rufen, danach die Besamung eintragen |
+| 👀 | **Auf Stierigkeit achten (Tag 21)** | Kuh beobachten. Stierig? → Brunft eintragen |
+| 🔬 | **Trächtigkeitsuntersuchung (Tag 28)** | Untersuchen lassen, danach das Ergebnis eintragen |
+| ⚠️ | **Ergebnis Trächtigkeitsuntersuchung eintragen** | Die Untersuchung ist vorbei, das Ergebnis fehlt noch |
+| 🐣 | **Kalbung erwartet** | Kalbetermin. „nicht bestätigt“ heißt: ohne Untersuchung |
+| ⚠️ | **Kalbung überfällig?** | Termin vorbei. Geburt eintragen, falls schon gekalbt |
+| 🌸 | **Brunft erwartet** | Auf Stierigkeit achten (Kuh ist nicht trächtig) |
+
+Ein Tipp auf einen Termin öffnet die Kuh.
+
+Darunter siehst du die Zahlen (Tiere, Kosten, Kalbungen in 30 Tagen) und die Liste aller Tiere.
+
+---
+
+## 4. Kuh wurde besamt – was jetzt?
+
+Das ist der wichtigste Ablauf. HerdenPilot führt dich Schritt für Schritt durch:
+
+**① Besamung eintragen**
+
+Am Tier → Ereignis → 💉 **Besamung**, oder per Telegram `/besamung Emma`.
+Die App plant sofort die nächsten Termine ein.
+
+**② Tag 21: auf Stierigkeit achten** 👀
+
+Die Kuh erscheint im Dashboard unter „Auf Stierigkeit achten“.
+
+- **Wieder stierig?** → 🌸 **Brunft** eintragen. Die App meldet 🔴 **„nachbesamen!“**
+  → nachbesamen lassen → **neue Besamung** eintragen. Der Ablauf beginnt von vorn.
+- **Nicht stierig?** → nichts tun, weiter zu ③.
+
+**③ Tag 28: Trächtigkeitsuntersuchung** 🔬
+
+Nach der Untersuchung das Ergebnis eintragen:
+
+- ✅ **TU: trächtig**, per Telegram `/tk Emma ja`
+  → Die App zeigt den **Kalbetermin** (Rind: 290 Tage nach der Besamung).
+- ❌ **TU: nicht trächtig**, per Telegram `/tk Emma nein`
+  → Die App erwartet die nächste Brunft. Wieder stierig? → Brunft eintragen → nachbesamen.
+
+**④ Kalbung** 🐣
+
+Wenn die Kuh gekalbt hat: 🐣 **Geburt** eintragen. Danach ist sie wieder „offen“, und der Kreislauf beginnt mit der nächsten Brunft.
+
+> Brunft und Besamung am **selben Tag** einzutragen ist richtig. Das löst kein „nachbesamen“ aus, erst eine Brunft ein paar Tage später.
+
+> **Ältere Besamungen nachtragen?** Kein Problem. Ist die Besamung länger als 60 Tage her und kein Ergebnis eingetragen, gilt die Kuh als „vermutlich trächtig“ und bekommt einen Kalbetermin. Mit dem Untersuchungsergebnis wird daraus ein bestätigter Termin.
+
+---
+
+## 5. Tier anlegen
+
+1. Auf dem Dashboard oben rechts **„+ Neues Tier“** drücken
 2. Felder ausfüllen:
 
 | Feld | Erklärung | Pflicht? |
 |------|-----------|----------|
-| **Name** | Freiname, z. B. „Emma“ | Ja |
-| **Ohrmarke** | Amtliche Nummer, z. B. AT 123456789 | Nein |
-| **Tierart** | Rind, Schaf, Schwein, Ziege | Empfohlen |
+| **Name** | z. B. „Emma“ | Ja |
+| **Ohrmarke** | Amtliche Nummer, z. B. DE 09 123 45678 | Empfohlen |
+| **Tierart** | Rind, Schaf, Schwein, Ziege | **Ja, für die Termine** |
 | **Geschlecht** | Weiblich / Männlich | Nein |
-| **Geburtsdatum** | Eigenes Geburtsdatum des Tieres | Nein |
+| **Geburtsdatum** | Geburtstag des Tieres | Nein |
 | **Notiz** | Interne Anmerkung | Nein |
 
-3. Auf **„Speichern“** drücken
+3. **„Speichern“** drücken
 
-> ⚠️ **Tierart nicht vergessen!** Ohne Tierart wird kein Geburtstermin berechnet.
+> ⚠️ **Ohne Tierart gibt es keine Termine.** Die Fristen hängen an der Tierart.
+> 💡 **Ohrmarke eintragen lohnt sich.** Über sie lassen sich später Daten zuordnen, etwa bei einem Import.
 
-Das Tier erscheint jetzt auf dem Dashboard.
+**Bearbeiten:** Tier antippen → „Bearbeiten“
+**Archivieren** (verkauft, abgegangen): Tier antippen → „Archivieren“. Die Daten bleiben erhalten.
 
-**Tier bearbeiten:** Auf den Namen klicken → „Bearbeiten“  
-**Tier archivieren:** Auf den Namen klicken → „Archivieren“ (Daten bleiben erhalten)
-
----
-
-## 4. Ereignis eintragen
-
-Ereignisse sind alles was mit dem Tier passiert: Brunft, Besamung, Trächtigkeitsuntersuchung, Geburt, Tierarzt (auch Impfung), Sonstiges.
-
-**So geht’s:**
-
-1. Auf dem Dashboard auf den **Tiernamen** klicken
-2. Im Bereich „Ereignisse“ auf **„+ Eintragen“** drücken
-3. **Ereignis-Typ** auswählen:
-   - 🌸 **Brunft** — Tier ist stierig
-   - 💉 **Besamung** — Tier wurde besamt
-   - ✅ **TU: trächtig** / ❌ **TU: nicht trächtig** — Ergebnis der Trächtigkeitsuntersuchung
-   - 🐣 **Geburt** — Tier hat gekalbt / gelammt / geferkelt
-   - 🩺 **Tierarzt / Impfung** — Tierarztbesuch, Impfung (Art in die Notiz schreiben)
-   - 📝 **Sonstiges** — Beliebiger Vermerk
-4. **Datum** eintragen (Standard: heute)
-5. **Notiz** hinzufügen (optional)
-6. Auf **„Speichern“** drücken
-
-**Was passiert automatisch?**
-
-- Nach einer **Besamung** stehen die nächsten Schritte als **Termine** oben im Dashboard:
-  1. **Tag 21:** auf Stierigkeit achten. Ist die Kuh wieder stierig → **Brunft** eintragen → die App meldet **„nachbesamen!"**
-  2. **Tag 28:** Trächtigkeitsuntersuchung → Ergebnis als **TU: trächtig** oder **TU: nicht trächtig** eintragen
-  3. **Trächtig:** die App zeigt den **erwarteten Kalbetermin**
-- Die Tage sind je Tierart unter **Einstellungen → Tierarten & Fristen** änderbar. Voreinstellung:
-
-| Tierart | Tragzeit |
-|---------|----------|
-| 🐄 Rinder (Fleckvieh) | 290 Tage |
-| 🐑 Schafe | 150 Tage |
-| 🐷 Schweine | 114 Tage |
-| 🐐 Ziegen | 150 Tage |
-
-- Nach einer **Brunft** wird die nächste Brunft vorgemerkt
-- Im Dashboard erscheint ein **Geburten-Hinweis** wenn es bald so weit ist
+Schneller per Telegram: `/neues_tier Emma Rind`
 
 ---
 
-## 5. Kosten eintragen
+## 6. Ereignis eintragen
 
-**So geht’s:**
+1. Auf dem Dashboard das **Tier** antippen
+2. Bei „Ereignisse“ auf **„+ Eintragen“**
+3. **Art** wählen:
+    - 🌸 **Brunft**: Tier ist stierig
+    - 💉 **Besamung**: Tier wurde besamt
+    - ✅ **TU: trächtig** / ❌ **TU: nicht trächtig**: Ergebnis der Trächtigkeitsuntersuchung
+    - 🐣 **Geburt**: Tier hat gekalbt
+    - 🩺 **Tierarzt / Impfung**: Tierarztbesuch oder Impfung, die Art in die Notiz schreiben
+    - 📝 **Sonstiges**: beliebiger Vermerk
+4. **Datum** prüfen (Standard: heute). Ältere Ereignisse einfach mit dem richtigen Datum eintragen.
+5. Bei Besamung, Untersuchung und Tierarzt kannst du gleich die **Kosten** mit angeben.
+6. **„Speichern“**
 
-1. Auf dem Dashboard auf den **Tiernamen** klicken
-2. Im Bereich „Kosten“ auf **„+ Eintragen“** drücken
-3. **Kostenart** auswählen: Tierarzt / Besamung / Futter / Medikamente / Impfung / Sonstiges
-4. **Betrag** eingeben (z. B. `150` oder `150,50`)
-5. **Datum** und optionale **Notiz** ergänzen
-6. Auf **„Speichern“** drücken
+Auf der Seite des Tiers steht oben der **aktuelle Stand** (z. B. „besamt 03.11. (Tag 17)“) mit den nächsten Terminen.
 
-Alle Kosten werden in der **Statistik** und im **PDF-Bericht** zusammengefasst.
-
----
-
-## 6. Statistik & Auswertung
-
-Oben im Menü auf **„Statistik“** klicken.
-
-| Auswertung | Erklärung |
-|---|---|
-| **Kosten pro Tier** | Welches Tier hat am meisten gekostet? |
-| **Kosten nach Art** | Wofür wurde am meisten ausgegeben? |
-| **Monatsverlauf** | Kosten der letzten 12 Monate |
-| **Trächtigkeitsrate** | Wie viele Besamungen führten zur Geburt? |
-| **Kosten pro Geburt** | Was hat eine Geburt durchschnittlich gekostet? |
+**Falsch eingetragen?** Beim Eintrag auf den Papierkorb tippen und neu eintragen.
 
 ---
 
-## 7. Export: CSV & PDF
+## 7. Kosten eintragen
 
-Oben im Menü auf **„Export“** klicken.
+1. **Tier** antippen → bei „Kosten“ auf **„+ Eintragen“**
+2. **Kostenart:** Tierarzt (auch Impfung) / Besamung / Futter / Medikamente / Sonstiges
+3. **Betrag** (z. B. `150` oder `150,50`), Datum, Notiz
+4. **„Speichern“**
 
-**CSV (für Excel):** Alle Tiere, Ereignisse und Kosten als Tabelle — öffnet sich in Excel, LibreOffice oder Google Tabellen.
-
-**PDF-Bericht:** Professionell formatierter Bericht mit Tierliste, Kostenübersicht und Ereignissen — ideal zum Ausdrucken oder per E-Mail.
+Per Telegram: `/tierarzt Emma 150` oder `/kosten Emma 80`
 
 ---
 
-## 8. Telegram-Befehle
+## 8. Telegram: alles vom Stall aus
 
-Mit Telegram kannst du alles Wichtige direkt vom Handy aus machen — auch wenn du nicht im Heimnetz bist.
+Mit Telegram trägst du direkt vom Handy ein, ohne die App zu öffnen. Jeden Morgen kommt eine **Übersicht der Termine**. Einrichten: siehe [Einstellungen](#9-einstellungen).
 
 ### Abfragen
 
 | Befehl | Was passiert |
 |--------|---------------|
-| `/status` | Alle Termine: Stierigkeit, Untersuchung, Kalbung |
-| `/tiere` | Liste aller aktiven Tiere |
-| `/hilfe` | Diese Befehlsliste |
+| `/status` | Alle Termine und eine Übersicht der Herde |
+| `/tiere` | Liste aller Tiere |
+| `/hilfe` | Alle Befehle |
 
-### Tiere anlegen
+### Eintragen
 
-| Befehl | Beispiel | Erklärung |
-|--------|----------|-----------|
-| `/neues_tier` | `/neues_tier Emma Rind` | Kuh „Emma“ anlegen |
-| `/neues_tier` | `/neues_tier Wolke Schaf` | Schaf „Wolke“ anlegen |
-
-Verfügbare Tierarten: Rind, Schaf, Schwein, Ziege
-
-### Eintragen (direkt aus dem Stall)
-
-| Befehl | Beispiel | Erklärung |
+| Befehl | Beispiel | Bedeutung |
 |--------|----------|-----------|
 | `/besamung` | `/besamung Emma` | Besamung heute |
-| `/besamung` | `/besamung Emma 24.05.` | Besamung mit Datum |
-| `/brunft` | `/brunft Bella` | Brunft heute |
-| `/geburt` | `/geburt Lisa 18.05.` | Geburt mit Datum |
-| `/tk` | `/tk Emma ja` / `/tk Emma nein` | Ergebnis Trächtigkeitsuntersuchung |
-| `/impfung` | `/impfung Anna` | Impfung heute (läuft unter Tierarzt) |
-| `/tierarzt` | `/tierarzt Emma 150` | Tierarzt 150 € |
+| | `/besamung Emma 03.11.` | Besamung an einem früheren Tag |
+| | `/besamung Emma 85` | Besamung mit 85 € Kosten |
+| `/brunft` | `/brunft Emma` | Kuh ist stierig. Nach einer Besamung meldet die App „nachbesamen!“ |
+| `/tk` | `/tk Emma ja` | Untersuchung: trächtig |
+| | `/tk Emma nein` | Untersuchung: nicht trächtig |
+| `/geburt` | `/geburt Emma` | Kuh hat gekalbt |
+| `/impfung` | `/impfung Emma` | Impfung (wird als Tierarzt eingetragen) |
+| `/tierarzt` | `/tierarzt Emma 150` | Tierarztkosten 150 € |
 | `/kosten` | `/kosten Emma 80` | Sonstige Kosten 80 € |
+| `/neues_tier` | `/neues_tier Emma Rind` | Neues Tier anlegen |
 
 **Tipps:**
-- Groß/Kleinschreibung egal: `/besamung emma` = `/besamung Emma`
-- Abkürzung reicht: `/besamung em` findet „Emma“
-- Täglich zur **eingestellten Uhrzeit** (Standard 6:00): Termine von heute und den nächsten 7 Tagen
+
+- Groß- und Kleinschreibung ist egal, eine Abkürzung reicht: `/besamung em` findet „Emma“
+- Ein Datum hängst du hinten an, z. B. `/brunft Emma 18.11.`
 
 ---
 
-## 9. Häufige Fragen
+## 9. Einstellungen
 
-**Ich habe die App versehentlich geschlossen. Sind meine Daten weg?**  
-Nein. Alle Daten sind dauerhaft gespeichert. Einfach den Link wieder öffnen.
+Oben im Menü → **Einstellungen**. Danach unten **„Speichern“** drücken.
 
-**Ich habe ein Tier falsch eingetragen. Wie ändere ich das?**  
-Auf den Tiernamen klicken → „Bearbeiten“ → Änderungen speichern.
+**Tierarten & Fristen**
 
-**Ich habe ein Ereignis falsch eingetragen. Wie lösche ich es?**  
-Auf den Tiernamen klicken → im Bereich „Ereignisse“ beim falschen Eintrag auf das Papierkorb-Symbol.
+Hier stehen die Tage, mit denen die Termine berechnet werden. Für Rinder (Fleckvieh) ist voreingestellt:
 
-**Die Geburtstermin-Berechnung stimmt nicht.**  
-Prüfe ob die richtige **Tierart** beim Tier eingestellt ist (Tier anklicken → Bearbeiten). Ohne Tierart gibt es keinen Geburtstermin.
+| Frist | Wert | Wofür |
+|---|---|---|
+| Brunftzyklus | 21 Tage | Wann nach der Besamung auf Stierigkeit achten |
+| Untersuchungstag | 28 Tage | Wann die Trächtigkeitsuntersuchung ansteht |
+| Tragzeit | 290 Tage | Wann die Kalbung erwartet wird |
 
-**Der Telegram-Bot antwortet nicht.**  
-Token und Chat-ID in der App unter **Menü → Einstellungen** prüfen. Den „Testnachricht senden“-Button verwenden.
+Passt ein Wert bei dir nicht, kannst du ihn hier ändern. Alle Termine richten sich sofort danach.
 
-**Ich möchte alle Daten sichern.**  
-Oben im Menü auf **Export → CSV** klicken und die Datei speichern.
+**Zugriffsschutz**
+
+Passwort eintragen = beim Öffnen wird danach gefragt. Leer lassen = kein Passwort.
+
+**Benachrichtigungen**
+
+- **Uhrzeit** der täglichen Übersicht (Standard 6:00)
+- **Kanäle** einschalten, auch mehrere zugleich:
+    - **Telegram**: Übersicht und Eingabe vom Stall aus (empfohlen)
+    - **ntfy**: einfache Push-Nachricht aufs Handy, ohne Konto
+    - **E-Mail**
+- Bei jedem Kanal steht eine **Einrichtungsanleitung zum Aufklappen**, dazu der Knopf **„Testmeldung senden“**.
+
+**Telegram kurz:** In Telegram bei **@BotFather** mit `/newbot` einen Bot anlegen und den Token kopieren. Bei **@userinfobot** die Chat-ID holen. Beides eintragen und speichern. Dann den eigenen Bot öffnen und **einmal „Start“ drücken**, sonst darf er dir nicht schreiben. Zum Schluss die Testmeldung senden.
+
+---
+
+## 10. Statistik und Export
+
+**Statistik** (Menü): Kosten pro Tier und nach Art, Monatsverlauf, Besamungserfolg, Kosten pro Geburt.
+
+**Export** (Menü):
+
+- **CSV**: alle Tiere, Ereignisse und Kosten als Tabelle für Excel. Taugt auch als **Datensicherung**.
+- **PDF**: fertiger Bericht zum Ausdrucken oder Verschicken.
+
+---
+
+## 11. Updates
+
+Menü → Einstellungen → ganz unten **„Auf Updates prüfen“**.
+
+- ✅ **„neuester Stand“**: nichts zu tun
+- 🔵 **„neue Änderungen verfügbar“**: Die Liste zeigt, was neu ist
+    - **Raspberry Pi / Server:** **„Jetzt aktualisieren“** drücken oder in Telegram `/update` senden. Nach 2–5 Minuten kommt „✅ Update abgeschlossen“. Die App ist in dieser Zeit kurz nicht erreichbar.
+    - **Windows:** HerdenPilot schließen und `update.bat` doppelklicken. Die genaue Anleitung steht auf der Update-Seite.
+
+**Deine Daten bleiben bei jedem Update erhalten.**
+
+---
+
+## 12. Häufige Fragen
+
+**Sind meine Daten weg, wenn ich die App schließe?**
+
+Nein. Alles ist dauerhaft gespeichert. Einfach den Link wieder öffnen.
+
+**Bei einer Kuh stehen keine Termine.**
+
+Prüfe, ob eine **Tierart** eingestellt ist (Tier → Bearbeiten) und ob die letzte **Brunft oder Besamung** eingetragen ist. Ohne diese Angaben kann die App nichts berechnen.
+
+**Ich habe das falsche Untersuchungsergebnis eingetragen.**
+
+Tier antippen → beim Eintrag auf den Papierkorb → richtiges Ergebnis neu eintragen.
+
+**Die Kuh wurde nachbesamt, aber im Dashboard steht noch „nachbesamen!“.**
+
+Die neue **Besamung** eintragen. Dann verschwindet der Hinweis, und die neuen Termine erscheinen.
+
+**Der Kalbetermin passt nicht.**
+
+Prüfe das Datum der Besamung. Grundsätzlich falsch? Die **Tragzeit** unter Einstellungen → Tierarten & Fristen anpassen.
+
+**Der Telegram-Bot antwortet nicht.**
+
+Token und Chat-ID unter Einstellungen prüfen. Beim eigenen Bot einmal „Start“ gedrückt? Dann „Testmeldung senden“. Neue Einstellungen übernimmt der Bot innerhalb von etwa 5 Minuten.
+
+**Ich möchte eine Datensicherung.**
+
+Menü → Export → **CSV** und die Datei speichern.
 
 ---
 

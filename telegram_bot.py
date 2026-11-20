@@ -218,6 +218,7 @@ def build_hilfe_message(farm_name: str) -> str:
         "Tag 28: Trächtigkeitsuntersuchung → /tk Emma ja  oder  /tk Emma nein\n"
         "Die Termine stehen in /status und in der Morgenmeldung.\n\n"
         "<i>Namen können abgekürzt werden: /besamung em findet Emma</i>\n"
+        "<i>Ausführliche Anleitung: in der App unter Menü → Anleitung</i>\n"
         "<i>Täglich zur eingestellten Uhrzeit: Termine von heute und den nächsten Tagen</i>"
     )
 

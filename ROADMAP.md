@@ -55,7 +55,7 @@
 | 28.07. | Updates I | Update-Prüfung (Browser, `/version`), `update.bat` für die exe |
 | 18.11. | Updates II & Feinschliff | Passwort aus `.env`; **Meldezeit einstellbar**; **Passwort in den Einstellungen**; **`/update` per Telegram/Knopf** + Pi-Setup-Skript; Cookie-Fix; Update-Prüfung gegen Code-Stand; `.dockerignore`; Formular-Fix Einstellungen; diese Roadmap |
 | 19.11. | Bedarfsklärung | Gespräch mit Vinzenz: keine Tierliste, Stammbaum verfügbar → E14; Testbetrieb mit Erfassung von Hand. LfL-Bullenliste (GZL) an echten Daten geprüft → E15 |
-| 20.11. | Fruchtbarkeits-Ablauf | Fragebogen 2 beantwortet (Fleckvieh). **Termine nach der Besamung**: Tag 21 Stierigkeit → nachbesamen, Tag 28 Trächtigkeitsuntersuchung mit Ergebnis, Kalbung nach 290 Tagen; Terminliste oben im Dashboard, in `/status` und in der Morgenmeldung; `/tk Emma ja/nein`; Fristen je Tierart in den Einstellungen; Impfung läuft unter Tierarzt (E16, E17) |
+| 20.11. | Fruchtbarkeits-Ablauf | Fragebogen 2 beantwortet (Fleckvieh). **Termine nach der Besamung**: Tag 21 Stierigkeit → nachbesamen, Tag 28 Trächtigkeitsuntersuchung mit Ergebnis, Kalbung nach 290 Tagen; Terminliste oben im Dashboard, in `/status` und in der Morgenmeldung; `/tk Emma ja/nein`; Fristen je Tierart in den Einstellungen; Impfung läuft unter Tierarzt (E16, E17). **Bedienungsanleitung in der App** (Menü → Anleitung), überarbeitet und nach Aufgaben gegliedert (E18) |
 
 Details zu jedem Schritt: `git log` bzw. die Commit-Liste auf GitHub.
 
@@ -168,6 +168,16 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - **Warum:** Wunsch von Vinzenz. Das Dashboard soll sich auf Brunft und Trächtigkeit konzentrieren (vgl. E02).
 - **Entscheidung:** „Impfung“ ist kein eigener Ereignis- und Kostentyp mehr. Sie wird als **Tierarzt** eingetragen, Details in die Notiz. `/impfung Emma` bleibt als Kurzbefehl und legt einen Tierarzt-Eintrag „Impfung“ an. Ältere Impf-Einträge bleiben sichtbar. **Die automatische Impf-Erinnerung entfällt.**
 - **Rückweg:** Die Datenbankfunktion `get_faellige_impfungen` ist noch vorhanden. Wird die Erinnerung doch gebraucht, wäre der bessere Weg ein Häkchen „Impfung“ am Tierarzt-Eintrag.
+
+### E18 — Bedienungsanleitung in der App, aus einer einzigen Quelle · *20.11.2026 · gilt*
+- **Ausgangslage:** `ANLEITUNG.md` gab es schon, aber nur im Repo. Vinzenz hätte sie nicht gefunden, und sie war teilweise veraltet.
+- **Entscheidung:**
+  - Neuer Menüpunkt **„Anleitung“** (`/anleitung`). Er zeigt `ANLEITUNG.md` als Webseite an.
+  - Es bleibt **eine einzige Quelle**: Wird die App geändert, wird die Anleitung im selben Commit mitgeändert, und mit dem Update ist sie automatisch aktuell. Sie funktioniert auch ohne Internet.
+  - Die Anleitung ist **nach Aufgaben gegliedert**. Herzstück ist „Kuh wurde besamt – was jetzt?“. Neu sind die Kapitel Dashboard/Termine, Einstellungen und Updates.
+- **Technik:** Paket `markdown` mit den Erweiterungen Tabellen, `sane_lists` und Inhaltsverzeichnis. Die Anker werden wie bei GitHub gebildet, damit die Links auf beiden Seiten passen. In der Windows-exe wird `ANLEITUNG.md` mit eingepackt.
+- **Schreibregel für `ANLEITUNG.md`:** vor jeder Liste eine Leerzeile, Unterlisten mit **4 Leerzeichen** einrücken. Sonst stimmt die Darstellung in der App nicht, auch wenn GitHub sie richtig zeigt.
+- **Rückweg:** Menüpunkt und Route entfernen, die Datei bleibt.
 ---
 
 ## 4. Fehler & Lehren
@@ -199,6 +209,7 @@ Jede Weichenstellung mit **Warum**, **Verworfenes** und **Rückweg**. Verworfene
 - [ ] Freigabe für den Bau von E15, Stufe 1. Fleckvieh steht in der LfL-Liste (13.938 Bullen), der Nutzen ist also gegeben. Am besten nach dem Wochenend-Test.
 
 **Verbesserungen**
+- [ ] Optional: Anleitung als **PDF zum Ausdrucken** (für den Stall)
 - [ ] **Update-Prüfung soll nur Programm-Änderungen zählen** (seit 19.11. bekannt). Bisher meldet sie auch reine Dokumentations-Commits (z. B. `ROADMAP.md`) als „neue Änderungen verfügbar“. Das verleitet zu Updates ohne Nutzen, die App ist dabei kurz weg, und der Telegram-Nutzer bekommt eine Meldung.
   *Lösung:* Über GitHub die geänderten Dateien prüfen. Betrifft ein Commit nur `*.md` oder Dokumentation, wird er als „nur Dokumentation, kein Update nötig“ angezeigt und nicht mitgezählt. Der Knopf bleibt als „Trotzdem aktualisieren“ erhalten. Gilt für Seite und `/version`.
 

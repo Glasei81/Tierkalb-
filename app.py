@@ -535,6 +535,40 @@ def spenden():
     return render_template("spenden.html", tier_count=tier_count, t=t)
 
 
+_ANLEITUNG_CACHE = {"mtime": None, "html": ""}
+
+
+def _gh_slug(value, separator="-"):
+    # Anker wie bei GitHub, damit die Links im Inhaltsverzeichnis überall passen
+    import re
+    v = value.strip().lower()
+    v = re.sub(r"[^\w\- ]", "", v)
+    return v.replace(" ", separator)
+
+
+def _anleitung_html():
+    import markdown
+    from markdown.extensions.tables import TableExtension
+    from markdown.extensions.toc import TocExtension
+    from markdown.extensions.sane_lists import SaneListExtension
+    pfad = _resource_path("ANLEITUNG.md")
+    mtime = os.path.getmtime(pfad)
+    if _ANLEITUNG_CACHE["mtime"] != mtime:
+        with open(pfad, encoding="utf-8") as f:
+            text = f.read()
+        html = markdown.markdown(text, extensions=[TableExtension(), SaneListExtension(), TocExtension(slugify=_gh_slug)])
+        html = (html.replace("<table>", '<div class="table-responsive"><table class="table table-sm table-bordered align-middle">')
+                    .replace("</table>", "</table></div>")
+                    .replace("<blockquote>", '<blockquote class="alert alert-warning py-2 px-3">'))
+        _ANLEITUNG_CACHE.update(mtime=mtime, html=html)
+    return _ANLEITUNG_CACHE["html"]
+
+
+@app.route("/anleitung")
+def anleitung():
+    return render_template("anleitung.html", inhalt=_anleitung_html())
+
+
 @app.route("/update")
 @require_farm
 def update_pruefen():
